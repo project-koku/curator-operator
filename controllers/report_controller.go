@@ -56,9 +56,27 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	l.Info("processing the report", "name", report.GetName(), "ns", report.GetNamespace())
+	if err := r.validateReport(report); err != nil {
+		// TODO(tflannag): Need to be careful about endless cycles here
+		// TODO(tflannag): Fire off an Event and complain in the Report's status about validation error
+		l.Error(err, "failed to validate the report")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.ensureReport(report); err != nil {
+		l.Error(err, "failed to ensure the report")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *ReportReconciler) validateReport(report *curatorv1alpha1.Report) error {
+	return nil
+}
+
+func (r *ReportReconciler) ensureReport(report *curatorv1alpha1.Report) error {
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
