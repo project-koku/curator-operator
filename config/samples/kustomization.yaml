@@ -1,4 +1,5 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
 - curator_v1alpha1_report.yaml
+- curator_v1alpha1_curatorconfig.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

@@ -1,0 +1,6 @@
+apiVersion: curator.operatorfirst.io/v1alpha1
+kind: CuratorConfig
+metadata:
+  name: curatorconfig-sample
+spec:
+  # TODO(user): Add fields here

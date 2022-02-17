@@ -16,4 +16,12 @@ resources:
   kind: Report
   path: github.com/timflannagan/curator-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: operatorfirst.io
+  group: curator
+  kind: CuratorConfig
+  path: github.com/timflannagan/curator-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"
