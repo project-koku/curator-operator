@@ -19,10 +19,14 @@ package controllers
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	log "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	curatorv1alpha1 "github.com/timflannagan/curator-operator/api/v1alpha1"
 )
@@ -39,17 +43,20 @@ type ReportReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Report object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	l := log.FromContext(ctx)
+	l.Info("reconciling report", "req", req.NamespacedName)
+	defer l.Info("finished reconciling report", "req", req.NamespacedName)
 
-	// TODO(user): your logic here
+	report := &curatorv1alpha1.Report{}
+	if err := r.Client.Get(ctx, req.NamespacedName, report); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	l.Info("processing the report", "name", report.GetName(), "ns", report.GetNamespace())
 
 	return ctrl.Result{}, nil
 }
@@ -58,5 +65,24 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *ReportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&curatorv1alpha1.Report{}).
+		Watches(&source.Kind{Type: &curatorv1alpha1.CuratorConfig{}}, requeueReportsHandler(mgr.GetClient(), mgr.GetLogger())).
 		Complete(r)
+}
+
+func requeueReportsHandler(c client.Client, log logr.Logger) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+		reports := &curatorv1alpha1.ReportList{}
+		if err := c.List(context.Background(), reports); err != nil {
+			return nil
+		}
+
+		var res []reconcile.Request
+		for _, report := range reports.Items {
+			log.Info("requeuing report", "name", report.GetName(), "ns", report.GetNamespace())
+			res = append(res, reconcile.Request{
+				NamespacedName: client.ObjectKeyFromObject(&report),
+			})
+		}
+		return res
+	})
 }
