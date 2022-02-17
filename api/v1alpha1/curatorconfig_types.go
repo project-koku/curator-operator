@@ -20,16 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // CuratorConfigSpec defines the desired state of CuratorConfig
 type CuratorConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Storage Storage `json:"storage,omitempty"`
+}
 
-	// Foo is an example field of CuratorConfig. Edit curatorconfig_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type Storage struct {
+	URI string `json:"uri"`
 }
 
 // CuratorConfigStatus defines the observed state of CuratorConfig
