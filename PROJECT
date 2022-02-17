@@ -1,0 +1,19 @@
+domain: operatorfirst.io
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: curator-operator
+repo: github.com/timflannagan/curator-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: operatorfirst.io
+  group: curator
+  kind: Report
+  path: github.com/timflannagan/curator-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

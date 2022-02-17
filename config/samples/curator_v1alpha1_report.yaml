@@ -1,0 +1,6 @@
+apiVersion: curator.operatorfirst.io/v1alpha1
+kind: Report
+metadata:
+  name: report-sample
+spec:
+  # TODO(user): Add fields here
