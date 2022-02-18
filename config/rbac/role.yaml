@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - curator.operatorfirst.io
   resources:
+  - curatorconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - curator.operatorfirst.io
+  resources:
+  - curatorconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - curator.operatorfirst.io
+  resources:
+  - curatorconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - curator.operatorfirst.io
+  resources:
   - reports
   verbs:
   - create
