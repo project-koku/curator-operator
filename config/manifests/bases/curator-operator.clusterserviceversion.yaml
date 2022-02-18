@@ -1,0 +1,52 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: curator-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: CuratorConfig is the Schema for the curatorconfigs API
+      displayName: Curator Config
+      kind: CuratorConfig
+      name: curatorconfigs.curator.operatorfirst.io
+      version: v1alpha1
+    - description: Report is the Schema for the reports API
+      displayName: Report
+      kind: Report
+      name: reports.curator.operatorfirst.io
+      version: v1alpha1
+  description: stub
+  displayName: curator-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - metering
+  - metrics
+  - reporting
+  links:
+  - name: Curator Operator
+    url: https://curator-operator.domain
+  maturity: alpha
+  provider:
+    name: Red Hat Inc.
+    url: https://github.com/operate-first/curator
+  version: 0.0.0
