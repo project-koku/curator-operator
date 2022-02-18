@@ -1,0 +1,5 @@
+dependencies:
+  - type: olm.package
+    value:
+      packageName: koku-metrics-operator
+      version: ">=1.0.0"
