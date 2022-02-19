@@ -1,4 +1,9 @@
 dependencies:
+  # Note(tflannag): We likely don't want to support this going forward as OLM automatically
+  # installs the koku-metrics-operator in the same namespace as the curator-operator as
+  # OLM's dependency resolution is scoped to namespaces. This is problematic as the
+  # koku-metrics-operator doesn't support AllNamespaces OperatorGroup InstallMode, so
+  # the rollout of the automatically generated CSV resource fails due to conflicting scoping.
   - type: olm.package
     value:
       packageName: koku-metrics-operator
