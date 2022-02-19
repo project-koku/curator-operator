@@ -39,6 +39,15 @@ jobs:
     - name: Verify controller binary can compile
       run: make build
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run linting checks
+      uses: "golangci/golangci-lint-action@v2"
+      with:
+        version: "v1.43"
+
   olm-bundle:
     runs-on: ubuntu-latest
     steps:
