@@ -43,8 +43,8 @@ spec:
   - metrics
   - reporting
   links:
-  - name: Curator Operator
-    url: https://curator-operator.domain
+  - name: Documentation
+    url: https://curator-doc.readthedocs.io/en/latest/
   maturity: alpha
   provider:
     name: Red Hat Inc.
