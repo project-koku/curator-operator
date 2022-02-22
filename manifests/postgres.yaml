@@ -1,7 +1,15 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+
+---
+
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-config
+  namespace: postgres
   labels:
     app: postgres
 data:
@@ -26,11 +34,14 @@ spec:
     - ReadWriteMany
   hostPath:
     path: "/mnt/data"
+
 ---
+
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: postgres-pv-claim
+  namespace: postgres
   labels:
     app: postgres
 spec:
@@ -47,6 +58,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
+  namespace: postgres
+  labels:
+    app: postgres
 spec:
   replicas: 1
   selector:
@@ -80,6 +94,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
+  namespace: postgres
   labels:
     app: postgres
 spec:
