@@ -3,11 +3,11 @@ kind: Report
 metadata:
   name: namespace-cpu-request
 spec:
-  reportingStart: '2022-02-27T21:23:00Z'
+  reportingStart: '2022-03-01T00:32:00Z'
   reportingEnd: '2022-12-30T23:59:59Z'
   namespace: 'default'
   schedule:
     period: "hourly"
     hourly:
-      minute: 25
-      second: 0
+      minute: 32
+      second: 02

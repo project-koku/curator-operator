@@ -59,7 +59,8 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	l.Info("reconciling report", "req", req.NamespacedName)
 	defer l.Info("finished reconciling report", "req", req.NamespacedName)
 
-	report := &curatorv1alpha1.Report{}
+	reportOriginal := &curatorv1alpha1.Report{}
+	report := reportOriginal.DeepCopy()
 	if err := r.Client.Get(ctx, req.NamespacedName, report); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -84,15 +85,19 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return ctrl.Result{}, nil
 	}
-	l.Info("reconciling report", "periodStart", reportPeriod.periodStart)
-	l.Info("reconciling report", "now", now)
-	l.Info("reconciling report", "periodEnd", reportPeriod.periodEnd)
-	l.Info("reconciling report", "waits for", reportPeriod.periodEnd.Sub(now))
+	//l.Info("reconciling report", "periodStart", reportPeriod.periodStart)
+	//l.Info("reconciling report", "now", now)
+	//l.Info("reconciling report", "periodEnd", reportPeriod.periodEnd)
+	//l.Info("reconciling report", "waits for", reportPeriod.periodEnd.Sub(now))
 	if reportPeriod.periodEnd.After(now) { // @fixme
 		return ctrl.Result{RequeueAfter: reportPeriod.periodEnd.Sub(now)}, nil
 	}
 	l.Info("reconciling report", "TakingEffect", req.NamespacedName)
 	report.Status.LastReportTime = &metav1.Time{Time: reportPeriod.periodEnd}
+	if err := r.Status().Update(ctx, report); err != nil {
+		l.Info("reconciling report", "Update Err", err)
+		return ctrl.Result{}, err
+	}
 	if report.Spec.Schedule != nil {
 		reportSchedule, err := getSchedule(report.Spec.Schedule)
 		if err != nil {
@@ -106,7 +111,11 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		now = time.Now().UTC()
 		nextRunTime := nextReportPeriod.periodEnd
 		waitTime := nextRunTime.Sub(now)
-		l.Info("reconciling report", "waits for * 2", waitTime)
+		//l.Info("reconciling report", "waits for * 2", waitTime)
+		if err := r.Status().Update(ctx, report); err != nil {
+			l.Info("reconciling report", "Update Err", err)
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{RequeueAfter: waitTime}, nil
 	}
 	return ctrl.Result{}, nil // @fixme empty results ?
