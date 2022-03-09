@@ -1,4 +1,4 @@
-module github.com/timflannagan/curator-operator
+module github.com/operator-first/curator-operator
 
 go 1.17
 
