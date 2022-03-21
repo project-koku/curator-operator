@@ -154,7 +154,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: quay.io/tflannag/curator:v0.0.1
+                image: quay.io/operate-first/curator-operator:v0.0.1
                 livenessProbe:
                   httpGet:
                     path: /healthz
