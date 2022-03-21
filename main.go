@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	curatorv1alpha1 "github.com/timflannagan/curator-operator/api/v1alpha1"
-	"github.com/timflannagan/curator-operator/controllers"
+	curatorv1alpha1 "github.com/operate-first/curator-operator/api/v1alpha1"
+	"github.com/operate-first/curator-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
