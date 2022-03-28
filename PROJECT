@@ -1,4 +1,4 @@
-domain: quay.io
+domain: operatefirst.io
 layout:
 - go.kubebuilder.io/v3
 plugins:
@@ -11,7 +11,7 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: quay.io
+  domain: operatefirst.io
   group: curator
   kind: Report
   path: github.com/operate-first/curator-operator/api/v1alpha1
@@ -19,7 +19,7 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  domain: quay.io
+  domain: operatefirst.io
   group: curator
   kind: CuratorConfig
   path: github.com/operate-first/curator-operator/api/v1alpha1

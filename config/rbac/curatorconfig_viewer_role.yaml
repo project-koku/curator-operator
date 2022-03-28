@@ -5,7 +5,7 @@ metadata:
   name: curatorconfig-viewer-role
 rules:
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - curatorconfigs
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - curatorconfigs/status
   verbs:

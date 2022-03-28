@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: curatorconfigs.curator.operatorfirst.io
+  name: curatorconfigs.curator.operatefirst.io
 spec:
-  group: curator.operatorfirst.io
+  group: curator.operatefirst.io
   names:
     kind: CuratorConfig
     listKind: CuratorConfigList

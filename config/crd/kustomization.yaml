@@ -2,8 +2,8 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/curator.operatorfirst.io_reports.yaml
-- bases/curator.operatorfirst.io_curatorconfigs.yaml
+- bases/curator.operatefirst.io_reports.yaml
+- bases/curator.operatefirst.io_curatorconfigs.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

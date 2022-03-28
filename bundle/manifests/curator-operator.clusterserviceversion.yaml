@@ -5,7 +5,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "curator.operatorfirst.io/v1alpha1",
+          "apiVersion": "curator.operatefirst.io/v1alpha1",
           "kind": "CuratorConfig",
           "metadata": {
             "name": "curatorconfig-sample"
@@ -13,7 +13,7 @@ metadata:
           "spec": null
         },
         {
-          "apiVersion": "curator.operatorfirst.io/v1alpha1",
+          "apiVersion": "curator.operatefirst.io/v1alpha1",
           "kind": "Report",
           "metadata": {
             "name": "report-sample"
@@ -33,12 +33,12 @@ spec:
     - description: CuratorConfig is the Schema for the curatorconfigs API
       displayName: Curator Config
       kind: CuratorConfig
-      name: curatorconfigs.curator.operatorfirst.io
+      name: curatorconfigs.curator.operatefirst.io
       version: v1alpha1
     - description: Report is the Schema for the reports API
       displayName: Report
       kind: Report
-      name: reports.curator.operatorfirst.io
+      name: reports.curator.operatefirst.io
       version: v1alpha1
   description: stub
   displayName: curator-operator
@@ -50,7 +50,7 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - curatorconfigs
           verbs:
@@ -62,13 +62,13 @@ spec:
           - update
           - watch
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - curatorconfigs/finalizers
           verbs:
           - update
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - curatorconfigs/status
           verbs:
@@ -76,7 +76,7 @@ spec:
           - patch
           - update
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - reports
           verbs:
@@ -88,13 +88,13 @@ spec:
           - update
           - watch
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - reports/finalizers
           verbs:
           - update
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - reports/status
           verbs:

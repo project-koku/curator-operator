@@ -5,7 +5,7 @@ metadata:
   name: report-viewer-role
 rules:
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - reports
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - reports/status
   verbs:
