@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,17 +26,41 @@ import (
 
 // FetchDataSpec defines the desired state of FetchData
 type FetchDataSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	//Namespace in which cron job is created
+	CronjobNamespace string `json:"cronjobNamespace,omitempty"`
 
-	// Foo is an example field of FetchData. Edit fetchdata_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	//Schedule period for the CronJob
+	Schedule string `json:"schedule,omitempty"`
+
+	//Koku metrics pvc zipped files storage path
+	BackupSrc string `json:"backupSrc,omitempty"`
+
+	//Koku-metrics-pvc path to unzip files
+	UnzipDir string `json:"unzipDir,omitempty"`
+
+	// Value for the Database Name Environment Variable
+	DatabaseName string `json:"databaseName,omitempty"`
+
+	//Value for the Database Password Environment Variable
+	DatabasePassword string `json:"databasePassword,omitempty"`
+
+	// Value for the Database User Environment Variable
+	DatabaseUser string `json:"databaseUser,omitempty"`
+
+	// Value for the Database HostName Environment Variable
+	DatabaseHostName string `json:"databaseHostName,omitempty"`
+
+	// Value for the Database Environment Variable in order to define the port which it should use. It will be used in its container as well
+	DatabasePort string `json:"databasePort,omitempty"`
 }
 
 // FetchDataStatus defines the observed state of FetchData
 type FetchDataStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	//Name of the CronJob object created and managed by it
+	CronJobName string `json:"cronJobName"`
+
+	//CronJobStatus represents the current state of a cronjob
+	CronJobStatus batchv1.CronJobStatus `json:"cronJobStatus"`
 }
 
 //+kubebuilder:object:root=true
