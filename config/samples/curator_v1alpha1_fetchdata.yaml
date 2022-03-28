@@ -1,0 +1,6 @@
+apiVersion: curator.operatefirst.io/v1alpha1
+kind: FetchData
+metadata:
+  name: fetchdata-sample
+spec:
+  # TODO(user): Add fields here

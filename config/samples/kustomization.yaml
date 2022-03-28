@@ -2,4 +2,5 @@
 resources:
 - curator_v1alpha1_report.yaml
 - curator_v1alpha1_curatorconfig.yaml
+- curator_v1alpha1_fetchdata.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

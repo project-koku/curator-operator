@@ -14,6 +14,14 @@ metadata:
         },
         {
           "apiVersion": "curator.operatefirst.io/v1alpha1",
+          "kind": "FetchData",
+          "metadata": {
+            "name": "fetchdata-sample"
+          },
+          "spec": null
+        },
+        {
+          "apiVersion": "curator.operatefirst.io/v1alpha1",
           "kind": "Report",
           "metadata": {
             "name": "report-sample"
@@ -34,6 +42,11 @@ spec:
       displayName: Curator Config
       kind: CuratorConfig
       name: curatorconfigs.curator.operatefirst.io
+      version: v1alpha1
+    - description: FetchData is the Schema for the fetchdata API
+      displayName: Fetch Data
+      kind: FetchData
+      name: fetchdata.curator.operatefirst.io
       version: v1alpha1
     - description: Report is the Schema for the reports API
       displayName: Report
@@ -71,6 +84,32 @@ spec:
           - curator.operatefirst.io
           resources:
           - curatorconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - curator.operatefirst.io
+          resources:
+          - fetchdata
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - curator.operatefirst.io
+          resources:
+          - fetchdata/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - curator.operatefirst.io
+          resources:
+          - fetchdata/status
           verbs:
           - get
           - patch

@@ -15,6 +15,11 @@ spec:
       kind: CuratorConfig
       name: curatorconfigs.curator.operatefirst.io
       version: v1alpha1
+    - description: FetchData is the Schema for the fetchdata API
+      displayName: Fetch Data
+      kind: FetchData
+      name: fetchdata.curator.operatefirst.io
+      version: v1alpha1
     - description: Report is the Schema for the reports API
       displayName: Report
       kind: Report
