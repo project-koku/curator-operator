@@ -1,23 +1,24 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: curatorconfigs.curator.operatorfirst.io
+  name: reports.curator.operatefirst.io
 spec:
-  group: curator.operatorfirst.io
+  group: curator.operatefirst.io
   names:
-    kind: CuratorConfig
-    listKind: CuratorConfigList
-    plural: curatorconfigs
-    singular: curatorconfig
+    kind: Report
+    listKind: ReportList
+    plural: reports
+    singular: report
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: CuratorConfig is the Schema for the curatorconfigs API
+        description: Report is the Schema for the reports API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,18 +33,34 @@ spec:
           metadata:
             type: object
           spec:
-            description: CuratorConfigSpec defines the desired state of CuratorConfig
+            description: ReportSpec defines the desired state of Report
             properties:
-              storage:
-                properties:
-                  uri:
-                    type: string
-                required:
-                - uri
-                type: object
+              namespace:
+                type: string
+              reportPeriod:
+                type: string
+              reportingEnd:
+                format: date-time
+                type: string
+              reportingStart:
+                format: date-time
+                type: string
+              schedule:
+                type: string
+            required:
+            - namespace
+            - reportingEnd
+            - reportingStart
+            - schedule
             type: object
           status:
-            description: CuratorConfigStatus defines the observed state of CuratorConfig
+            description: ReportStatus defines the observed state of Report
+            properties:
+              conditions:
+                type: string
+              lastScheduleTime:
+                format: date-time
+                type: string
             type: object
         type: object
     served: true

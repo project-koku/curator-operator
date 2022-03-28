@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: f0fd8a02.operatorfirst.io
+  resourceName: f0fd8a02.operatefirst.io

@@ -1,13 +1,13 @@
-# permissions for end users to edit curatorconfigs.
+# permissions for end users to edit fetchdata.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: curatorconfig-editor-role
+  name: fetchdata-editor-role
 rules:
 - apiGroups:
-  - curator.operatefirst.io
+  - curator.operate-first.io
   resources:
-  - curatorconfigs
+  - fetchdata
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - curator.operatefirst.io
+  - curator.operate-first.io
   resources:
-  - curatorconfigs/status
+  - fetchdata/status
   verbs:
   - get
