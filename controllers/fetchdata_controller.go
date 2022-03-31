@@ -75,7 +75,7 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if err := r.createCronJob(FetchData); err != nil {
-		l.Info("Failed to create the CronJob", err)
+		l.Error(err, "failed to create the CronJob resource")
 		return ctrl.Result{}, err
 	}
 
