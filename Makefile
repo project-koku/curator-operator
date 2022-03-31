@@ -235,3 +235,6 @@ catalog-push: ## Push a catalog image.
 .PHONY: postgres
 postgres:
 	kubectl apply -f manifests
+
+verify: tidy generate
+	git diff --exit-code
