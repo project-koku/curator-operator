@@ -21,7 +21,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -63,18 +63,14 @@ type FetchDataReconciler struct {
 func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
 
-	FetchData := &curatorv1alpha1.FetchData{}
-
-	err := r.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, FetchData)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			l.Info("FetchData resource not found. Ignoring since object must be deleted.")
-			return ctrl.Result{}, nil
-		}
+	fd := &curatorv1alpha1.FetchData{}
+	if err := r.Get(ctx, req.NamespacedName, fd); err != nil {
+		l.Info("failed to query for the FetchData resource", "error", err.Error())
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.createCronJob(FetchData); err != nil {
+	// TODO: pivot towards a CreateOrRecreate implementation for the underlying CronJob resource
+	if err := r.createCronJob(ctx, fd); err != nil {
 		l.Error(err, "failed to create the CronJob resource")
 		return ctrl.Result{}, err
 	}
@@ -82,24 +78,23 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
-func (r *FetchDataReconciler) createCronJob(m *curatorv1alpha1.FetchData) error {
-	if _, err := FetchCronJob(m.Name, m.Namespace, r.Client); err != nil {
-		if err := r.Client.Create(context.TODO(), NewCronJob(m, r.Scheme)); err != nil {
+func (r *FetchDataReconciler) createCronJob(ctx context.Context, m *curatorv1alpha1.FetchData) error {
+	job := &batchv1.CronJob{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, job)
+	if apierrors.IsNotFound(err) {
+		job = NewCronJob(m)
+		if err := r.Client.Create(ctx, job); err != nil {
 			return err
 		}
+		return nil
 	}
-
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func FetchCronJob(name, namespace string, client client.Client) (*batchv1.CronJob, error) {
-	cronJob := &batchv1.CronJob{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, cronJob)
-	return cronJob, err
-}
-
-func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.CronJob {
-	//fmt.Println("Name and Namespace", m.Namespace, m.Name)
+func NewCronJob(m *curatorv1alpha1.FetchData) *batchv1.CronJob {
 	cronjob := &batchv1.CronJob{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Cronjob",
