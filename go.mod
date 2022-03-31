@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/go-logr/logr v1.2.0
-	github.com/lib/pq v1.10.4
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
 	k8s.io/api v0.23.0
