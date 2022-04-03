@@ -67,8 +67,8 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	l.Info("reconciling report", "req", req.NamespacedName)
 	defer l.Info("finished reconciling report", "req", req.NamespacedName)
 
-	reportOriginal := &curatorv1alpha1.Report{}
-	report := reportOriginal.DeepCopy()
+	report := &curatorv1alpha1.Report{}
+	//report := reportOriginal.DeepCopy()
 	if err := r.Client.Get(ctx, req.NamespacedName, report); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -85,11 +85,7 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 	now := time.Now().UTC()
-	logrLogger, err := logr.FromContext(ctx)
-	if err != nil {
-		return ctrl.Result{}, nil
-	}
-	reportPeriod, err := getReportPeriod(now, logrLogger, report)
+	reportPeriod, err := getReportPeriod(now, l, report)
 	if err != nil {
 		return ctrl.Result{}, nil
 	}
@@ -106,7 +102,7 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		panic(err.Error())
 	}
 	defer postgreQueryer.Close()
-	results, err := ExecuteSelect(postgreQueryer, "SELECT * FROM history")
+	results, err := ExecuteSelect(postgreQueryer, "SELECT * FROM logs_1")
 	for result, _ := range results {
 		l.Info("reconciling report", "NewReport", result)
 	}
@@ -197,10 +193,10 @@ func getReportPeriod(now time.Time, logger logr.Logger, report *curatorv1alpha1.
 			reportPeriod = getNextReportPeriod(reportSchedule, report.Status.LastReportTime.Time)
 		} else {
 			if report.Spec.ReportingStart != nil {
-				//logger.Info("no last report time for report, using spec.reportingStart %s as starting point", report.Spec.ReportingStart.Time)
+				logger.Info(fmt.Sprintf("no last report time for report, using spec.reportingStart %s as starting point", report.Spec.ReportingStart.Time))
 				reportPeriod = getNextReportPeriod(reportSchedule, report.Spec.ReportingStart.Time)
 			} else if report.Status.NextReportTime != nil {
-				//logger.Info("no last report time for report, using status.nextReportTime %s as starting point", report.Status.NextReportTime.Time)
+				logger.Info(fmt.Sprintf("no last report time for report, using status.nextReportTime %s as starting point", report.Status.NextReportTime.Time))
 				reportPeriod = getNextReportPeriod(reportSchedule, report.Status.NextReportTime.Time)
 			} else {
 				// the current period, [now, nextScheduledTime]
@@ -220,7 +216,7 @@ func getReportPeriod(now time.Time, logger logr.Logger, report *curatorv1alpha1.
 	}
 
 	if reportPeriod.periodStart.After(reportPeriod.periodEnd) {
-		panic("periodStart should never come after periodEnd")
+		return nil, fmt.Errorf("periodStart should never come after periodEnd")
 	}
 
 	if report.Spec.ReportingEnd != nil && reportPeriod.periodEnd.After(report.Spec.ReportingEnd.Time) {
