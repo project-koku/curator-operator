@@ -27,11 +27,8 @@ jobs:
     - name: Get dependencies
       run: go mod download
 
-    - name: Verify the go dependencies produce no diff
-      run: make tidy && make diff
-
-    - name: Verify controller-gen produces no diff
-      run: make generate && make diff
+    - name: Run verification checks
+      run: make verify
 
     - name: Run unit tests
       run: make test

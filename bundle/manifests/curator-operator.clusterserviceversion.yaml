@@ -5,7 +5,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "curator.operatorfirst.io/v1alpha1",
+          "apiVersion": "curator.operatefirst.io/v1alpha1",
           "kind": "CuratorConfig",
           "metadata": {
             "name": "curatorconfig-sample"
@@ -13,7 +13,15 @@ metadata:
           "spec": null
         },
         {
-          "apiVersion": "curator.operatorfirst.io/v1alpha1",
+          "apiVersion": "curator.operatefirst.io/v1alpha1",
+          "kind": "FetchData",
+          "metadata": {
+            "name": "fetchdata-sample"
+          },
+          "spec": null
+        },
+        {
+          "apiVersion": "curator.operatefirst.io/v1alpha1",
           "kind": "Report",
           "metadata": {
             "name": "report-sample"
@@ -33,12 +41,17 @@ spec:
     - description: CuratorConfig is the Schema for the curatorconfigs API
       displayName: Curator Config
       kind: CuratorConfig
-      name: curatorconfigs.curator.operatorfirst.io
+      name: curatorconfigs.curator.operatefirst.io
+      version: v1alpha1
+    - description: FetchData is the Schema for the fetchdata API
+      displayName: Fetch Data
+      kind: FetchData
+      name: fetchdata.curator.operatefirst.io
       version: v1alpha1
     - description: Report is the Schema for the reports API
       displayName: Report
       kind: Report
-      name: reports.curator.operatorfirst.io
+      name: reports.curator.operatefirst.io
       version: v1alpha1
   description: stub
   displayName: curator-operator
@@ -50,7 +63,70 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - curator.operatorfirst.io
+          - batch
+          resources:
+          - cronjobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs/status
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - curator.operatefirst.io
           resources:
           - curatorconfigs
           verbs:
@@ -62,13 +138,13 @@ spec:
           - update
           - watch
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - curatorconfigs/finalizers
           verbs:
           - update
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - curatorconfigs/status
           verbs:
@@ -76,7 +152,7 @@ spec:
           - patch
           - update
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - reports
           verbs:
@@ -88,15 +164,41 @@ spec:
           - update
           - watch
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - reports/finalizers
           verbs:
           - update
         - apiGroups:
-          - curator.operatorfirst.io
+          - curator.operatefirst.io
           resources:
           - reports/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - my.domain
+          resources:
+          - FetchData
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - my.domain
+          resources:
+          - FetchData/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - my.domain
+          resources:
+          - FetchData/status
           verbs:
           - get
           - patch
@@ -154,7 +256,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: quay.io/tflannag/curator:v0.0.1
+                image: quay.io/operate-first/curator-operator:v0.0.1
                 livenessProbe:
                   httpGet:
                     path: /healthz

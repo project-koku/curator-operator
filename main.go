@@ -71,7 +71,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "f0fd8a02.operatorfirst.io",
+		LeaderElectionID:       "f0fd8a02.operatefirst.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -83,6 +83,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Report")
+		os.Exit(1)
+	}
+	if err = (&controllers.FetchDataReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "FetchData")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

@@ -6,7 +6,70 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - curator.operatorfirst.io
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs/status
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - curator.operatefirst.io
   resources:
   - curatorconfigs
   verbs:
@@ -18,13 +81,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - curatorconfigs/finalizers
   verbs:
   - update
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - curatorconfigs/status
   verbs:
@@ -32,7 +95,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - reports
   verbs:
@@ -44,15 +107,41 @@ rules:
   - update
   - watch
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - reports/finalizers
   verbs:
   - update
 - apiGroups:
-  - curator.operatorfirst.io
+  - curator.operatefirst.io
   resources:
   - reports/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - my.domain
+  resources:
+  - FetchData
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - my.domain
+  resources:
+  - FetchData/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - my.domain
+  resources:
+  - FetchData/status
   verbs:
   - get
   - patch

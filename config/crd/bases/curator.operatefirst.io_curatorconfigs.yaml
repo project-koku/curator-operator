@@ -1,23 +1,24 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: reports.curator.operatorfirst.io
+  name: curatorconfigs.curator.operatefirst.io
 spec:
-  group: curator.operatorfirst.io
+  group: curator.operatefirst.io
   names:
-    kind: Report
-    listKind: ReportList
-    plural: reports
-    singular: report
+    kind: CuratorConfig
+    listKind: CuratorConfigList
+    plural: curatorconfigs
+    singular: curatorconfig
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Report is the Schema for the reports API
+        description: CuratorConfig is the Schema for the curatorconfigs API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,34 +33,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: ReportSpec defines the desired state of Report
+            description: CuratorConfigSpec defines the desired state of CuratorConfig
             properties:
-              namespace:
-                type: string
-              reportPeriod:
-                type: string
-              reportingEnd:
-                format: date-time
-                type: string
-              reportingStart:
-                format: date-time
-                type: string
-              schedule:
-                type: string
-            required:
-            - namespace
-            - reportingEnd
-            - reportingStart
-            - schedule
+              storage:
+                properties:
+                  uri:
+                    type: string
+                required:
+                - uri
+                type: object
             type: object
           status:
-            description: ReportStatus defines the observed state of Report
-            properties:
-              conditions:
-                type: string
-              lastScheduleTime:
-                format: date-time
-                type: string
+            description: CuratorConfigStatus defines the observed state of CuratorConfig
             type: object
         type: object
     served: true

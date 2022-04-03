@@ -1,4 +1,4 @@
-apiVersion: curator.operatorfirst.io/v1alpha1
+apiVersion: curator.operatefirst.io/v1alpha1
 kind: CuratorConfig
 metadata:
   name: curatorconfig-sample
