@@ -21,7 +21,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/go-logr/logr"
-	"github.com/leihchen/curator-operator/db"
+	//"github.com/operate-first/curator-operator/db"
 	"os"
 
 	"github.com/robfig/cron"
@@ -102,10 +102,10 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		panic(err.Error())
 	}
 	defer postgreQueryer.Close()
-	results, err := ExecuteSelect(postgreQueryer, "SELECT * FROM logs_1")
-	for result, _ := range results {
-		l.Info("reconciling report", "NewReport", result)
-	}
+	//results, err := ExecuteSelect(postgreQueryer, "SELECT * FROM logs_1")
+	//for result, _ := range results {
+	//	l.Info("reconciling report", "NewReport", result)
+	//}
 	report.Status.LastReportTime = &metav1.Time{Time: reportPeriod.periodEnd}
 	if err := r.Status().Update(ctx, report); err != nil {
 		l.Info("reconciling report", "Update Err", err)
@@ -382,46 +382,46 @@ func convertDayOfWeek(dow string) (int, error) {
 	return 0, fmt.Errorf("invalid day of week: %s", dow)
 }
 
-func ExecuteSelect(queryer db.Queryer, query string) ([]Row, error) {
-	rows, err := queryer.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	cols, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-
-	var results []Row
-	for rows.Next() {
-		// Create a slice of interface{}'s to represent each column,
-		// and a second slice to contain pointers to each item in the columns slice.
-		columns := make([]interface{}, len(cols))
-		columnPointers := make([]interface{}, len(cols))
-		for i := range columns {
-			columnPointers[i] = &columns[i]
-		}
-
-		// Scan the result into the column pointers...
-		if err := rows.Scan(columnPointers...); err != nil {
-			return nil, err
-		}
-
-		// Create our map, and retrieve the value for each column from the pointers slice,
-		// storing it in the map with the name of the column as the key.
-		m := make(map[string]interface{})
-		for i, colName := range cols {
-			val := columnPointers[i].(*interface{})
-			m[colName] = *val
-		}
-		results = append(results, Row(m))
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
-type Row map[string]interface{}
+//func ExecuteSelect(queryer db.Queryer, query string) ([]Row, error) {
+//	rows, err := queryer.Query(query)
+//	if err != nil {
+//		return nil, err
+//	}
+//	defer rows.Close()
+//	cols, err := rows.Columns()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	var results []Row
+//	for rows.Next() {
+//		// Create a slice of interface{}'s to represent each column,
+//		// and a second slice to contain pointers to each item in the columns slice.
+//		columns := make([]interface{}, len(cols))
+//		columnPointers := make([]interface{}, len(cols))
+//		for i := range columns {
+//			columnPointers[i] = &columns[i]
+//		}
+//
+//		// Scan the result into the column pointers...
+//		if err := rows.Scan(columnPointers...); err != nil {
+//			return nil, err
+//		}
+//
+//		// Create our map, and retrieve the value for each column from the pointers slice,
+//		// storing it in the map with the name of the column as the key.
+//		m := make(map[string]interface{})
+//		for i, colName := range cols {
+//			val := columnPointers[i].(*interface{})
+//			m[colName] = *val
+//		}
+//		results = append(results, Row(m))
+//	}
+//	if err := rows.Err(); err != nil {
+//		return nil, err
+//	}
+//
+//	return results, nil
+//}
+//
+//type Row map[string]interface{}
