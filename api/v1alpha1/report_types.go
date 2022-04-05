@@ -20,19 +20,68 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ReportPeriodCron    ReportPeriod = "cron"
+	ReportPeriodHourly  ReportPeriod = "hourly"
+	ReportPeriodDaily   ReportPeriod = "daily"
+	ReportPeriodWeekly  ReportPeriod = "weekly"
+	ReportPeriodMonthly ReportPeriod = "monthly"
+)
+
+type ReportPeriod string
+
+type ReportSchedule struct {
+	Period ReportPeriod `json:"period"`
+
+	Cron    *ReportScheduleCron    `json:"cron,omitempty"`
+	Hourly  *ReportScheduleHourly  `json:"hourly,omitempty"`
+	Daily   *ReportScheduleDaily   `json:"daily,omitempty"`
+	Weekly  *ReportScheduleWeekly  `json:"weekly,omitempty"`
+	Monthly *ReportScheduleMonthly `json:"monthly,omitempty"`
+}
+
+type ReportScheduleCron struct {
+	Expression string `json:"expression,omitempty"`
+}
+
+type ReportScheduleHourly struct {
+	Minute int64 `json:"minute,omitempty"`
+	Second int64 `json:"second,omitempty"`
+}
+
+type ReportScheduleDaily struct {
+	Hour   int64 `json:"hour,omitempty"`
+	Minute int64 `json:"minute,omitempty"`
+	Second int64 `json:"second,omitempty"`
+}
+
+type ReportScheduleWeekly struct {
+	DayOfWeek *string `json:"dayOfWeek,omitempty"`
+	Hour      int64   `json:"hour,omitempty"`
+	Minute    int64   `json:"minute,omitempty"`
+	Second    int64   `json:"second,omitempty"`
+}
+
+type ReportScheduleMonthly struct {
+	DayOfMonth *int64 `json:"dayOfMonth,omitempty"`
+	Hour       int64  `json:"hour,omitempty"`
+	Minute     int64  `json:"minute,omitempty"`
+	Second     int64  `json:"second,omitempty"`
+}
+
 // ReportSpec defines the desired state of Report
 type ReportSpec struct {
-	Schedule       string       `json:"schedule"`
-	ReportPeriod   string       `json:"reportPeriod,omitempty"`
-	ReportingEnd   *metav1.Time `json:"reportingEnd"`
-	ReportingStart *metav1.Time `json:"reportingStart"`
-	Namespace      string       `json:"namespace"`
+	Schedule       *ReportSchedule `json:"schedule,omitempty"`
+	ReportingEnd   *metav1.Time    `json:"reportingEnd"`
+	ReportingStart *metav1.Time    `json:"reportingStart"`
+	Namespace      string          `json:"namespace"`
 }
 
 // ReportStatus defines the observed state of Report
 type ReportStatus struct {
-	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
-	Conditions       string       `json:"conditions,omitempty"`
+	LastReportTime *metav1.Time `json:"lastReportTime,omitempty"`
+	NextReportTime *metav1.Time `json:"nextReportTime,omitempty"`
+	Conditions     string       `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
