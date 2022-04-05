@@ -38,13 +38,10 @@ import (
 	"github.com/operate-first/curator-operator/internal/db"
 )
 
-const (
-	postgresURL = "host=postgresql.test-project.svc  port=5432 user=curator password=M5rBgWkN8LfjeyI8 dbname=curatordb sslmode=disable"
-)
-
 // ReportReconciler reconciles a Report object
 type ReportReconciler struct {
 	client.Client
+	DB     *sql.DB
 	Scheme *runtime.Scheme
 }
 
@@ -78,12 +75,6 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if reportPeriod.periodEnd.After(now) { // @fixme
 		return ctrl.Result{RequeueAfter: reportPeriod.periodEnd.Sub(now)}, nil
 	}
-
-	postgreQueryer, err := sql.Open("postgres", postgresURL)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer postgreQueryer.Close()
 
 	report.Status.LastReportTime = &metav1.Time{Time: reportPeriod.periodEnd}
 	if err := r.Status().Update(ctx, report); err != nil {
