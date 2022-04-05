@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	curatorv1alpha1 "github.com/operate-first/curator-operator/api/v1alpha1"
-	"github.com/operate-first/curator-operator/db"
+	"github.com/operate-first/curator-operator/internal/db"
 )
 
 const (
