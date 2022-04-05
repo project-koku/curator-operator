@@ -70,72 +70,46 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.validateReport(report); err != nil {
-		// TODO(tflannag): Need to be careful about endless cycles here
-		// TODO(tflannag): Fire off an Event and complain in the Report's status about validation error
-		l.Error(err, "failed to validate the report")
-		return ctrl.Result{}, err
-	}
-
-	if err := r.ensureReport(report); err != nil {
-		l.Error(err, "failed to ensure the report")
-		return ctrl.Result{}, err
-	}
 	now := time.Now().UTC()
 	reportPeriod, err := getReportPeriod(now, l, report)
 	if err != nil {
 		return ctrl.Result{}, nil
 	}
-	//l.Info("reconciling report", "periodStart", reportPeriod.periodStart)
-	//l.Info("reconciling report", "now", now)
-	//l.Info("reconciling report", "periodEnd", reportPeriod.periodEnd)
-	//l.Info("reconciling report", "waits for", reportPeriod.periodEnd.Sub(now))
 	if reportPeriod.periodEnd.After(now) { // @fixme
 		return ctrl.Result{RequeueAfter: reportPeriod.periodEnd.Sub(now)}, nil
 	}
-	//l.Info("reconciling report", "TakingEffect", req.NamespacedName)
+
 	postgreQueryer, err := sql.Open("postgres", postgresURL)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer postgreQueryer.Close()
-	results, err := ExecuteSelect(postgreQueryer, "SELECT * FROM logs_1")
-	for result, _ := range results {
-		l.Info("reconciling report", "NewReport", result)
-	}
+
 	report.Status.LastReportTime = &metav1.Time{Time: reportPeriod.periodEnd}
 	if err := r.Status().Update(ctx, report); err != nil {
 		l.Info("reconciling report", "Update Err", err)
 		return ctrl.Result{}, err
 	}
-	if report.Spec.Schedule != nil {
-		reportSchedule, err := getSchedule(report.Spec.Schedule)
-		if err != nil {
-			return ctrl.Result{}, err // @fixme empty results ?
-		}
-		nextReportPeriod := getNextReportPeriod(reportSchedule, report.Status.LastReportTime.Time)
-
-		// update the NextReportTime on the report status
-		report.Status.NextReportTime = &metav1.Time{Time: nextReportPeriod.periodEnd}
-		now = time.Now().UTC()
-		nextRunTime := nextReportPeriod.periodEnd
-		waitTime := nextRunTime.Sub(now)
-		//l.Info("reconciling report", "waits for * 2", waitTime)
-		if err := r.Status().Update(ctx, report); err != nil {
-			l.Info("reconciling report", "Update Err", err)
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{RequeueAfter: waitTime}, nil
+	if report.Spec.Schedule == nil {
+		return ctrl.Result{}, nil
 	}
-	return ctrl.Result{}, nil // @fixme empty results ?
-}
+	reportSchedule, err := getSchedule(report.Spec.Schedule)
+	if err != nil {
+		return ctrl.Result{}, err // @fixme empty results ?
+	}
+	nextReportPeriod := getNextReportPeriod(reportSchedule, report.Status.LastReportTime.Time)
 
-func (r *ReportReconciler) validateReport(report *curatorv1alpha1.Report) error {
-	return nil
-}
+	// update the NextReportTime on the report status
+	report.Status.NextReportTime = &metav1.Time{Time: nextReportPeriod.periodEnd}
+	now = time.Now().UTC()
+	nextRunTime := nextReportPeriod.periodEnd
+	waitTime := nextRunTime.Sub(now)
 
-func (r *ReportReconciler) ensureReport(report *curatorv1alpha1.Report) error {
-	return nil
+	if err := r.Status().Update(ctx, report); err != nil {
+		l.Info("reconciling report", "Update Err", err)
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{RequeueAfter: waitTime}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
