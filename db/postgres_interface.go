@@ -18,21 +18,21 @@ type Execer interface {
 	Close() error
 }
 
-type loggingQueryer struct {
+type LoggingQueryer struct {
 	queryer    Queryer
 	logger     log.FieldLogger
 	logQueries bool
 }
 
-func NewLoggingQueryer(queryer Queryer, logger log.FieldLogger, logQueries bool) *loggingQueryer {
-	return &loggingQueryer{
+func NewLoggingQueryer(queryer Queryer, logger log.FieldLogger, logQueries bool) *LoggingQueryer {
+	return &LoggingQueryer{
 		queryer:    queryer,
 		logger:     logger,
 		logQueries: logQueries,
 	}
 }
 
-func (loggingQueryer *loggingQueryer) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (loggingQueryer *LoggingQueryer) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	if loggingQueryer.logQueries {
 		margs := argsString(args...)
 		loggingQueryer.logger.Debugf("QUERY: %s [%s]", query, margs)
@@ -40,25 +40,25 @@ func (loggingQueryer *loggingQueryer) Query(query string, args ...interface{}) (
 	return loggingQueryer.queryer.Query(query, args...)
 }
 
-func (loggingQueryer *loggingQueryer) Close() error {
+func (loggingQueryer *LoggingQueryer) Close() error {
 	return loggingQueryer.queryer.Close()
 }
 
-type loggingExecer struct {
+type LoggingExecer struct {
 	execer     Execer
 	logger     log.FieldLogger
 	logQueries bool
 }
 
-func NewLoggingExecer(execer Execer, logger log.FieldLogger, logQueries bool) *loggingExecer {
-	return &loggingExecer{
+func NewLoggingExecer(execer Execer, logger log.FieldLogger, logQueries bool) *LoggingExecer {
+	return &LoggingExecer{
 		execer:     execer,
 		logger:     logger,
 		logQueries: logQueries,
 	}
 }
 
-func (loggingExecer *loggingExecer) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (loggingExecer *LoggingExecer) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if loggingExecer.logQueries {
 		margs := argsString(args...)
 		loggingExecer.logger.Debugf("EXEC: %s [%s]", query, margs)
@@ -66,7 +66,7 @@ func (loggingExecer *loggingExecer) Exec(query string, args ...interface{}) (sql
 	return loggingExecer.execer.Exec(query, args...)
 }
 
-func (loggingExecer *loggingExecer) Close() error {
+func (loggingExecer *LoggingExecer) Close() error {
 	return loggingExecer.execer.Close()
 }
 
@@ -75,7 +75,7 @@ func (loggingExecer *loggingExecer) Close() error {
 func argsString(args ...interface{}) string {
 	var margs string
 	for i, a := range args {
-		var v interface{} = a
+		v := a
 		if x, ok := v.(driver.Valuer); ok {
 			y, err := x.Value()
 			if err == nil {
