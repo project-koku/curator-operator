@@ -24,48 +24,53 @@ type ReportPeriod struct {
 	PeriodStart time.Time
 }
 
-func GetReportPeriod(now time.Time, logger logr.Logger, report *curatorv1alpha1.Report) (*ReportPeriod, error) {
+func getReportPeriodFromSchedule(logger logr.Logger, now time.Time, report *curatorv1alpha1.Report) (*ReportPeriod, error) {
 	var reportPeriod *ReportPeriod
-
-	// check if the report's schedule spec is set
-	if report.Spec.Schedule != nil {
-		reportSchedule, err := GetSchedule(report.Spec.Schedule)
-		if err != nil {
-			return nil, err
-		}
-
-		if report.Status.LastReportTime != nil {
-			reportPeriod = GetNextReportPeriod(reportSchedule, report.Status.LastReportTime.Time)
-		} else {
-			if report.Spec.ReportingStart != nil {
-				logger.Info(fmt.Sprintf("no last report time for report, using spec.reportingStart %s as starting point", report.Spec.ReportingStart.Time))
-				reportPeriod = GetNextReportPeriod(reportSchedule, report.Spec.ReportingStart.Time)
-			} else if report.Status.NextReportTime != nil {
-				logger.Info(fmt.Sprintf("no last report time for report, using status.nextReportTime %s as starting point", report.Status.NextReportTime.Time))
-				reportPeriod = GetNextReportPeriod(reportSchedule, report.Status.NextReportTime.Time)
-			} else {
-				// the current period, [now, nextScheduledTime]
-				currentPeriod := GetNextReportPeriod(reportSchedule, now)
-				// the next full report period from [nextScheduledTime, nextScheduledTime+1]
-				reportPeriod = GetNextReportPeriod(reportSchedule, currentPeriod.PeriodEnd)
-				report.Status.NextReportTime = &metav1.Time{Time: reportPeriod.PeriodStart}
-			}
-		}
-	} else {
+	// check if there's the Spec.Schedule field is unset, and exit early
+	// as the report must be a run-once report which is terminal state.
+	if report.Spec.Schedule == nil {
 		var err error
-		// if there's the Spec.Schedule field is unset, then the report must be a run-once report
 		reportPeriod, err = getRunOnceReportPeriod(report)
 		if err != nil {
 			return nil, err
 		}
+		return reportPeriod, nil
 	}
 
+	reportSchedule, err := GetSchedule(report.Spec.Schedule)
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case report.Status.LastReportTime != nil:
+		reportPeriod = GetNextReportPeriod(reportSchedule, report.Status.LastReportTime.Time)
+	case report.Spec.ReportingStart != nil:
+		logger.Info(fmt.Sprintf("no last report time for report, using spec.reportingStart %s as starting point", report.Spec.ReportingStart.Time))
+		reportPeriod = GetNextReportPeriod(reportSchedule, report.Spec.ReportingStart.Time)
+	case report.Status.NextReportTime != nil:
+		logger.Info(fmt.Sprintf("no last report time for report, using status.nextReportTime %s as starting point", report.Status.NextReportTime.Time))
+		reportPeriod = GetNextReportPeriod(reportSchedule, report.Status.NextReportTime.Time)
+	default:
+		// the current period, [now, nextScheduledTime]
+		currentPeriod := GetNextReportPeriod(reportSchedule, now)
+		// the next full report period from [nextScheduledTime, nextScheduledTime+1]
+		reportPeriod = GetNextReportPeriod(reportSchedule, currentPeriod.PeriodEnd)
+		report.Status.NextReportTime = &metav1.Time{Time: reportPeriod.PeriodStart}
+	}
+
+	return reportPeriod, nil
+}
+
+func GetReportPeriod(now time.Time, logger logr.Logger, report *curatorv1alpha1.Report) (*ReportPeriod, error) {
+	reportPeriod, err := getReportPeriodFromSchedule(logger, now, report)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get report period from schedule: %w", err)
+	}
 	if reportPeriod.PeriodStart.After(reportPeriod.PeriodEnd) {
 		return nil, fmt.Errorf("PeriodStart should never come after PeriodEnd")
 	}
-
 	if report.Spec.ReportingEnd != nil && reportPeriod.PeriodEnd.After(report.Spec.ReportingEnd.Time) {
-		//logger.Debugf("calculated Report PeriodEnd %s goes beyond spec.reportingEnd %s, setting PeriodEnd to reportingEnd", reportPeriod.PeriodEnd, report.Spec.ReportingEnd.Time)
 		// we need to truncate the reportPeriod to align with the reportingEnd
 		reportPeriod.PeriodEnd = report.Spec.ReportingEnd.Time
 	}
