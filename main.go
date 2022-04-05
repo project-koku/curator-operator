@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"os"
 
@@ -41,9 +42,12 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+const (
+	postgresURL = "host=postgresql.test-project.svc  port=5432 user=curator password=M5rBgWkN8LfjeyI8 dbname=curatordb sslmode=disable"
+)
+
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(curatorv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -78,9 +82,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	db, err := sql.Open("postgres", postgresURL)
+	if err != nil {
+		setupLog.Error(err, "failed to open a database connection to postgres")
+		os.Exit(1)
+	}
+	defer db.Close()
+
 	if err = (&controllers.ReportReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		DB:     db,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Report")
 		os.Exit(1)
