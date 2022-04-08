@@ -71,6 +71,32 @@ rules:
 - apiGroups:
   - curator.operatefirst.io
   resources:
+  - FetchData
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - curator.operatefirst.io
+  resources:
+  - FetchData/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - curator.operatefirst.io
+  resources:
+  - FetchData/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - curator.operatefirst.io
+  resources:
   - curatorconfigs
   verbs:
   - create
@@ -116,32 +142,6 @@ rules:
   - curator.operatefirst.io
   resources:
   - reports/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - my.domain
-  resources:
-  - FetchData
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - my.domain
-  resources:
-  - FetchData/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - my.domain
-  resources:
-  - FetchData/status
   verbs:
   - get
   - patch
