@@ -38,9 +38,9 @@ type FetchDataReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=my.domain,resources=FetchData,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=my.domain,resources=FetchData/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=my.domain,resources=FetchData/finalizers,verbs=update
+//+kubebuilder:rbac:groups=curator.operatefirst.io,resources=FetchData,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=curator.operatefirst.io,resources=FetchData/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=curator.operatefirst.io,resources=FetchData/finalizers,verbs=update
 //+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=cronjobs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=batch,resources=cronjobs/finalizers,verbs=update
