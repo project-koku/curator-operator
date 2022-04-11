@@ -232,9 +232,5 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
-.PHONY: postgres
-postgres:
-	kubectl apply -f manifests
-
 verify: tidy generate
 	git diff --exit-code
