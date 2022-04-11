@@ -97,7 +97,7 @@ rules:
 - apiGroups:
   - curator.operatefirst.io
   resources:
-  - fetchData
+  - fetchdata
   verbs:
   - create
   - delete
@@ -109,13 +109,13 @@ rules:
 - apiGroups:
   - curator.operatefirst.io
   resources:
-  - fetchData/finalizers
+  - fetchdata/finalizers
   verbs:
   - update
 - apiGroups:
   - curator.operatefirst.io
   resources:
-  - fetchData/status
+  - fetchdata/status
   verbs:
   - get
   - patch
