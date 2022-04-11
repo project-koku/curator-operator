@@ -116,7 +116,6 @@ rules:
   - curator.operatefirst.io
   resources:
   - fetchdata/status
-  - fetchData/status
   verbs:
   - get
   - patch

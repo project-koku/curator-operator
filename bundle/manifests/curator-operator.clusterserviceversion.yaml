@@ -18,15 +18,36 @@ metadata:
           "metadata": {
             "name": "fetchdata-sample"
           },
-          "spec": null
+          "spec": {
+            "backupSrc": "/tmp/koku-metrics-operator-data/upload",
+            "cronjobNamespace": "koku-metrics-operator",
+            "databaseHostName": "\u003chostname or host ip\u003e",
+            "databaseName": "\u003cdatabase-name\u003e",
+            "databasePassword": "\u003cpassword\u003e",
+            "databasePort": "\u003cport-number\u003e",
+            "databaseUser": "\u003cuser-name\u003e",
+            "schedule": "0 */6 * * *",
+            "unzipDir": "/tmp/koku-metrics-operator-data/s3sync"
+          }
         },
         {
           "apiVersion": "curator.operatefirst.io/v1alpha1",
           "kind": "Report",
           "metadata": {
-            "name": "report-sample"
+            "name": "namespace-cpu-request-report-sample"
           },
-          "spec": null
+          "spec": {
+            "namespace": "default",
+            "reportingEnd": "2022-12-30T23:59:59Z",
+            "reportingStart": "2022-03-01T00:32:00Z",
+            "schedule": {
+              "hourly": {
+                "minute": 32,
+                "second": 2
+              },
+              "period": "hourly"
+            }
+          }
         }
       ]
     capabilities: Basic Install
@@ -121,32 +142,6 @@ spec:
           - ""
           resources:
           - persistentvolumeclaims/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - curator.operatefirst.io
-          resources:
-          - fetchData
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - curator.operatefirst.io
-          resources:
-          - fetchData/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - curator.operatefirst.io
-          resources:
-          - fetchData/status
           verbs:
           - get
           - patch

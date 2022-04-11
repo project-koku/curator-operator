@@ -1,6 +1,13 @@
 apiVersion: curator.operatefirst.io/v1alpha1
 kind: Report
 metadata:
-  name: report-sample
+  name: namespace-cpu-request-report-sample
 spec:
-  # TODO(user): Add fields here
+  reportingStart: '2022-03-01T00:32:00Z'
+  reportingEnd: '2022-12-30T23:59:59Z'
+  namespace: 'default'
+  schedule:
+    period: "hourly"
+    hourly:
+      minute: 32
+      second: 02

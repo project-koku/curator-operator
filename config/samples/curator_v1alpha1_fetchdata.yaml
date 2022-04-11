@@ -3,4 +3,12 @@ kind: FetchData
 metadata:
   name: fetchdata-sample
 spec:
-  # TODO(user): Add fields here
+  cronjobNamespace: koku-metrics-operator
+  schedule: "0 */6 * * *"  # This job will run every 6 hours. You can also use " schedule: '* * * * *' " to run this cron job instantly
+  backupSrc: /tmp/koku-metrics-operator-data/upload
+  unzipDir: /tmp/koku-metrics-operator-data/s3sync
+  databaseName: <database-name>
+  databasePassword: <password>
+  databaseUser: <user-name>
+  databaseHostName: <hostname or host ip>
+  databasePort: <port-number>
