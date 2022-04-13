@@ -18,10 +18,10 @@ package controllers
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/jackc/pgx/v4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,7 +38,7 @@ import (
 // ReportReconciler reconciles a Report object
 type ReportReconciler struct {
 	client.Client
-	DB     *sql.DB
+	DB     *pgx.Conn
 	Scheme *runtime.Scheme
 }
 
