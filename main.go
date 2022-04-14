@@ -17,11 +17,11 @@ limitations under the License.
 package main
 
 import (
-	"database/sql"
+	"context"
 	"flag"
 	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v4"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -84,12 +84,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := sql.Open("postgres", postgresURL)
+	db, err := pgx.Connect(context.Background(), postgresURL)
 	if err != nil {
 		setupLog.Error(err, "failed to open a database connection to postgres")
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer db.Close(context.Background())
 
 	if err = (&controllers.ReportReconciler{
 		Client: mgr.GetClient(),
