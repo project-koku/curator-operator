@@ -234,3 +234,7 @@ catalog-push: ## Push a catalog image.
 
 verify: tidy generate
 	git diff --exit-code
+	
+.PHONY: bin/server
+bin/server:
+	go build -o $@ cmd/server/main.go
