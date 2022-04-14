@@ -94,7 +94,6 @@ func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	waitTime := nextRunTime.Sub(now)
 
 	if err := r.Status().Update(ctx, report); err != nil {
-		l.Info("reconciling report", "Update Err", err)
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{RequeueAfter: waitTime}, nil
