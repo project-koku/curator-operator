@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +39,10 @@ type FetchDataReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+const (
+	dbSecretName = "db-secret"
+)
+
 //+kubebuilder:rbac:groups=curator.operatefirst.io,resources=fetchdata,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=curator.operatefirst.io,resources=fetchdata/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=curator.operatefirst.io,resources=fetchdata/finalizers,verbs=update
@@ -49,6 +54,9 @@ type FetchDataReconciler struct {
 //+kubebuilder:rbac:groups="core",resources=persistentvolumeclaims,verbs=get;watch;list;create;update;delete
 //+kubebuilder:rbac:groups="core",resources=persistentvolumeclaims,verbs=get;watch;list
 //+kubebuilder:rbac:groups="core",resources=persistentvolumeclaims/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="core",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="core",resources=secrets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="core",resources=secrets/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -74,6 +82,12 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
+	// Checks if the secret with the database is created, if not create one
+	if err := r.createDatabaseSecret(FetchData); err != nil {
+		l.Error(err, "Failed to create the Database secret")
+		return ctrl.Result{}, err
+	}
+
 	if err := r.createCronJob(FetchData); err != nil {
 		l.Error(err, "failed to create the CronJob resource")
 		return ctrl.Result{}, err
@@ -84,21 +98,75 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *FetchDataReconciler) createCronJob(m *curatorv1alpha1.FetchData) error {
 	if _, err := FetchCronJob(m.Name, m.Namespace, r.Client); err != nil {
-		if err := r.Client.Create(context.TODO(), NewCronJob(m, r.Scheme)); err != nil {
+		if err := r.Client.Create(context.TODO(), NewCronJob(m, r.Scheme, r.Client)); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
+func (r *FetchDataReconciler) createDatabaseSecret(m *curatorv1alpha1.FetchData) error {
+	if _, err := FetchSecret(dbSecretName, m.Namespace, r.Client); err != nil {
+		secretData := buildDBSecretData(m)
+		dbSecret := NewSecrets(m, secretData, dbSecretName)
+		if err := r.Client.Create(context.TODO(), dbSecret); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func FetchSecret(name string, namespace string, client client.Client) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+	err := client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, secret)
+	return secret, err
+}
+
+func NewSecrets(m *curatorv1alpha1.FetchData, secretData map[string][]byte, secretName string) *corev1.Secret {
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: m.Namespace,
+		},
+		Data: secretData,
+		Type: "Opaque",
+	}
+	return secret
+}
+
+func buildDBSecretData(m *curatorv1alpha1.FetchData) map[string][]byte {
+	return map[string][]byte{
+		"DATABASE_USER":      []byte(m.Spec.DatabaseUser),
+		"DATABASE_PASSWORD":  []byte(m.Spec.DatabasePassword),
+		"DATABASE_NAME":      []byte(m.Spec.DatabaseName),
+		"DATABASE_HOST_NAME": []byte(m.Spec.DatabaseHostName),
+		"PORT_NUMBER":        []byte(m.Spec.DatabasePort),
+	}
+}
+
+func getDBSecrets(secretName string, m *curatorv1alpha1.FetchData, client client.Client) string {
+	secret, err := FetchSecret(dbSecretName, m.Namespace, client)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for key, value := range secret.Data {
+		if key == secretName {
+			return string(value)
+		}
+	}
+	return ""
+}
 func FetchCronJob(name, namespace string, client client.Client) (*batchv1.CronJob, error) {
 	cronJob := &batchv1.CronJob{}
 	err := client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, cronJob)
 	return cronJob, err
 }
 
-func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.CronJob {
+func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme, client client.Client) *batchv1.CronJob {
 	//fmt.Println("Name and Namespace", m.Namespace, m.Name)
 	cronjob := &batchv1.CronJob{
 		TypeMeta: metav1.TypeMeta{
@@ -140,23 +208,23 @@ func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.C
 										},
 										{
 											Name:  "DATABASE_NAME",
-											Value: m.Spec.DatabaseName,
+											Value: getDBSecrets("DATABASE_NAME", m, client),
 										},
 										{
 											Name:  "DATABASE_USER",
-											Value: m.Spec.DatabaseUser,
+											Value: getDBSecrets("DATABASE_USER", m, client),
 										},
 										{
 											Name:  "DATABASE_PASSWORD",
-											Value: m.Spec.DatabasePassword,
+											Value: getDBSecrets("DATABASE_PASSWORD", m, client),
 										},
 										{
 											Name:  "DATABASE_HOST_NAME",
-											Value: m.Spec.DatabaseHostName,
+											Value: getDBSecrets("DATABASE_HOST_NAME", m, client),
 										},
 										{
 											Name:  "PORT_NUMBER",
-											Value: m.Spec.DatabasePort,
+											Value: getDBSecrets("PORT_NUMBER", m, client),
 										},
 									},
 									Command: []string{"python3"},
