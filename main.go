@@ -17,11 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
-
-	"github.com/jackc/pgx/v4"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -42,10 +39,6 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
-)
-
-const (
-	postgresURL = "host=postgresql.test-project.svc  port=5432 user=curator password=M5rBgWkN8LfjeyI8 dbname=curatordb sslmode=disable"
 )
 
 func init() {
@@ -84,17 +77,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := pgx.Connect(context.Background(), postgresURL)
-	if err != nil {
-		setupLog.Error(err, "failed to open a database connection to postgres")
-		os.Exit(1)
-	}
-	defer db.Close(context.Background())
-
 	if err = (&controllers.ReportReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		DB:     db,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Report")
 		os.Exit(1)

@@ -17,71 +17,41 @@ limitations under the License.
 package v1alpha1
 
 import (
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	ReportPeriodCron    ReportPeriod = "cron"
-	ReportPeriodHourly  ReportPeriod = "hourly"
-	ReportPeriodDaily   ReportPeriod = "daily"
-	ReportPeriodWeekly  ReportPeriod = "weekly"
-	ReportPeriodMonthly ReportPeriod = "monthly"
-)
-
-type ReportPeriod string
-
-type ReportSchedule struct {
-	Period ReportPeriod `json:"period"`
-
-	Cron    *ReportScheduleCron    `json:"cron,omitempty"`
-	Hourly  *ReportScheduleHourly  `json:"hourly,omitempty"`
-	Daily   *ReportScheduleDaily   `json:"daily,omitempty"`
-	Weekly  *ReportScheduleWeekly  `json:"weekly,omitempty"`
-	Monthly *ReportScheduleMonthly `json:"monthly,omitempty"`
-}
-
-type ReportScheduleCron struct {
-	Expression string `json:"expression,omitempty"`
-}
-
-type ReportScheduleHourly struct {
-	Minute int64 `json:"minute,omitempty"`
-	Second int64 `json:"second,omitempty"`
-}
-
-type ReportScheduleDaily struct {
-	Hour   int64 `json:"hour,omitempty"`
-	Minute int64 `json:"minute,omitempty"`
-	Second int64 `json:"second,omitempty"`
-}
-
-type ReportScheduleWeekly struct {
-	DayOfWeek *string `json:"dayOfWeek,omitempty"`
-	Hour      int64   `json:"hour,omitempty"`
-	Minute    int64   `json:"minute,omitempty"`
-	Second    int64   `json:"second,omitempty"`
-}
-
-type ReportScheduleMonthly struct {
-	DayOfMonth *int64 `json:"dayOfMonth,omitempty"`
-	Hour       int64  `json:"hour,omitempty"`
-	Minute     int64  `json:"minute,omitempty"`
-	Second     int64  `json:"second,omitempty"`
-}
-
 // ReportSpec defines the desired state of Report
 type ReportSpec struct {
-	Schedule       *ReportSchedule `json:"schedule,omitempty"`
-	ReportingEnd   *metav1.Time    `json:"reportingEnd"`
-	ReportingStart *metav1.Time    `json:"reportingStart"`
-	Namespace      string          `json:"namespace"`
+	//Namespace in which cron job is created
+	CronjobNamespace string `json:"cronjobNamespace,omitempty"`
+
+	//Schedule period for the Report Cronjob
+	ScheduleForReport string `json:"scheduleForReport,omitempty"`
+
+	// Value for the Database Name Environment Variable
+	DatabaseName string `json:"databaseName,omitempty"`
+
+	//Value for the Database Password Environment Variable
+	DatabasePassword string `json:"databasePassword,omitempty"`
+
+	// Value for the Database User Environment Variable
+	DatabaseUser string `json:"databaseUser,omitempty"`
+
+	// Value for the Database HostName Environment Variable
+	DatabaseHostName string `json:"databaseHostName,omitempty"`
+
+	// Value for the Database Environment Variable in order to define the port which it should use. It will be used in its container as well
+	DatabasePort string `json:"databasePort,omitempty"`
 }
 
 // ReportStatus defines the observed state of Report
 type ReportStatus struct {
-	LastReportTime *metav1.Time `json:"lastReportTime,omitempty"`
-	NextReportTime *metav1.Time `json:"nextReportTime,omitempty"`
-	Conditions     string       `json:"conditions,omitempty"`
+	//Name of the CronJob object created and managed by it
+	CronJobName string `json:"cronJobName"`
+
+	//CronJobStatus represents the current state of a cronjob
+	CronJobStatus batchv1.CronJobStatus `json:"cronJobStatus"`
 }
 
 //+kubebuilder:object:root=true

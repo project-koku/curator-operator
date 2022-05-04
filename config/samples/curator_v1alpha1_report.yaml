@@ -1,13 +1,12 @@
 apiVersion: curator.operatefirst.io/v1alpha1
 kind: Report
 metadata:
-  name: namespace-cpu-request-report-sample
+  name: day-report
 spec:
-  reportingStart: '2022-03-01T00:32:00Z'
-  reportingEnd: '2022-12-30T23:59:59Z'
-  namespace: 'default'
-  schedule:
-    period: "hourly"
-    hourly:
-      minute: 32
-      second: 02
+  cronjobNamespace: koku-metrics-operator
+  schedule: "0 */6 * * *"
+  databaseName: curatordb
+  databasePassword: M5rBgWkN8LfjeyI8
+  databaseUser: curator
+  databaseHostName: postgresql.koku-metrics-operator.svc
+  databasePort: "5432"

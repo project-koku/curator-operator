@@ -1,14 +1,14 @@
 apiVersion: curator.operatefirst.io/v1alpha1
 kind: FetchData
 metadata:
-  name: fetchdata-sample
+  name: sample-1
 spec:
   cronjobNamespace: koku-metrics-operator
-  schedule: "0 */6 * * *"  # This job will run every 6 hours. You can also use " schedule: '* * * * *' " to run this cron job instantly
+  schedule: "0 */6 * * *"
   backupSrc: /tmp/koku-metrics-operator-data/upload
   unzipDir: /tmp/koku-metrics-operator-data/s3sync
-  databaseName: <database-name>
-  databasePassword: <password>
-  databaseUser: <user-name>
-  databaseHostName: <hostname or host ip>
-  databasePort: <port-number>
+  databaseName: curatordb
+  databasePassword: M5rBgWkN8LfjeyI8
+  databaseUser: curator
+  databaseHostName: postgresql.koku-metrics-operator.svc
+  databasePort: "5432"

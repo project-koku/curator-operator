@@ -64,7 +64,7 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	l := log.FromContext(ctx)
 
 	FetchData := &curatorv1alpha1.FetchData{}
-
+	//fmt.Println("AAgaya mai aagaya")
 	err := r.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, FetchData)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -99,7 +99,6 @@ func FetchCronJob(name, namespace string, client client.Client) (*batchv1.CronJo
 }
 
 func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.CronJob {
-	//fmt.Println("Name and Namespace", m.Namespace, m.Name)
 	cronjob := &batchv1.CronJob{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Cronjob",
