@@ -37,6 +37,8 @@ spec:
             properties:
               namespace:
                 type: string
+              reportPeriod:
+                type: string
               reportingEnd:
                 format: date-time
                 type: string
@@ -44,81 +46,19 @@ spec:
                 format: date-time
                 type: string
               schedule:
-                properties:
-                  cron:
-                    properties:
-                      expression:
-                        type: string
-                    type: object
-                  daily:
-                    properties:
-                      hour:
-                        format: int64
-                        type: integer
-                      minute:
-                        format: int64
-                        type: integer
-                      second:
-                        format: int64
-                        type: integer
-                    type: object
-                  hourly:
-                    properties:
-                      minute:
-                        format: int64
-                        type: integer
-                      second:
-                        format: int64
-                        type: integer
-                    type: object
-                  monthly:
-                    properties:
-                      dayOfMonth:
-                        format: int64
-                        type: integer
-                      hour:
-                        format: int64
-                        type: integer
-                      minute:
-                        format: int64
-                        type: integer
-                      second:
-                        format: int64
-                        type: integer
-                    type: object
-                  period:
-                    type: string
-                  weekly:
-                    properties:
-                      dayOfWeek:
-                        type: string
-                      hour:
-                        format: int64
-                        type: integer
-                      minute:
-                        format: int64
-                        type: integer
-                      second:
-                        format: int64
-                        type: integer
-                    type: object
-                required:
-                - period
-                type: object
+                type: string
             required:
             - namespace
             - reportingEnd
             - reportingStart
+            - schedule
             type: object
           status:
             description: ReportStatus defines the observed state of Report
             properties:
               conditions:
                 type: string
-              lastReportTime:
-                format: date-time
-                type: string
-              nextReportTime:
+              lastScheduleTime:
                 format: date-time
                 type: string
             type: object
