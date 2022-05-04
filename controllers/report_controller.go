@@ -18,24 +18,27 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"time"
 
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/go-logr/logr"
+	"github.com/jackc/pgx/v4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	log "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	curatorv1alpha1 "github.com/operate-first/curator-operator/api/v1alpha1"
+	"github.com/operate-first/curator-operator/internal/reporting"
 )
 
 // ReportReconciler reconciles a Report object
 type ReportReconciler struct {
 	client.Client
+	DB     *pgx.Conn
 	Scheme *runtime.Scheme
 }
 
@@ -45,11 +48,6 @@ type ReportReconciler struct {
 //+kubebuilder:rbac:groups=curator.operatefirst.io,resources=curatorconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=curator.operatefirst.io,resources=curatorconfigs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=curator.operatefirst.io,resources=curatorconfigs/finalizers,verbs=update
-//+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batch,resources=cronjobs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=batch,resources=cronjobs/finalizers,verbs=update
-//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -58,107 +56,71 @@ type ReportReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *ReportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
-	fmt.Println("Enter reconcile", req.NamespacedName)
-	//l.Info("reconciling report", "req", req.NamespacedName)
+	l.Info("reconciling report", "req", req.NamespacedName)
+	defer l.Info("finished reconciling report", "req", req.NamespacedName)
 
-	l.Info("Enter reconcile", "req", req)
-	Report := &curatorv1alpha1.Report{}
-
-	//err := r.Get(ctx, types.NamespacedName, Fetchdata)
-
-	err := r.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, Report)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			l.Info("Report resource not found. Ignoring since object must be deleted.")
-			return ctrl.Result{}, nil
-		}
+	report := &curatorv1alpha1.Report{}
+	if err := r.Client.Get(ctx, req.NamespacedName, report); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.createJob(Report); err != nil {
-		l.Error(err, "failed to create the CronJob resource")
+	now := time.Now().UTC()
+	reportPeriod, err := reporting.GetReportPeriod(now, l, report)
+	if err != nil {
+		return ctrl.Result{}, nil
+	}
+	if reportPeriod.PeriodEnd.After(now) { // @fixme
+		return ctrl.Result{RequeueAfter: reportPeriod.PeriodEnd.Sub(now)}, nil
+	}
+
+	report.Status.LastReportTime = &metav1.Time{Time: reportPeriod.PeriodEnd}
+	if err := r.Status().Update(ctx, report); err != nil {
+		l.Info("reconciling report", "Update Err", err)
 		return ctrl.Result{}, err
 	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *ReportReconciler) createJob(d *curatorv1alpha1.Report) error {
-	if _, err := FetchCronJob(d.Name, d.Namespace, r.Client); err != nil {
-		if err := r.Client.Create(context.TODO(), ReportCronJob(d, r.Scheme)); err != nil {
-			return err
-		}
+	if report.Spec.Schedule == nil {
+		return ctrl.Result{}, nil
 	}
-
-	return nil
-}
-
-func FetchReportJob(name, namespace string, client client.Client) (*batchv1.CronJob, error) {
-	cronJob := &batchv1.CronJob{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, cronJob)
-	return cronJob, err
-}
-
-func ReportCronJob(d *curatorv1alpha1.Report, scheme *runtime.Scheme) *batchv1.CronJob {
-	cronjob := &batchv1.CronJob{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Cronjob",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.Name,
-			Namespace: d.Spec.CronjobNamespace,
-		},
-		Spec: batchv1.CronJobSpec{
-			ConcurrencyPolicy: "Forbid",
-			Schedule:          d.Spec.ScheduleForReport,
-			JobTemplate: batchv1.JobTemplateSpec{
-				Spec: batchv1.JobSpec{
-					Template: corev1.PodTemplateSpec{
-						Spec: corev1.PodSpec{
-							Containers: []corev1.Container{
-								{
-									Name:  "dayreport",
-									Image: "docker.io/library/postgres:13.0",
-									Env: []corev1.EnvVar{
-										{
-											Name:  "DATABASE_NAME",
-											Value: d.Spec.DatabaseName,
-										},
-										{
-											Name:  "DATABASE_USER",
-											Value: d.Spec.DatabaseUser,
-										},
-										{
-											Name:  "DATABASE_PASSWORD",
-											Value: d.Spec.DatabasePassword,
-										},
-										{
-											Name:  "DATABASE_HOST_NAME",
-											Value: d.Spec.DatabaseHostName,
-										},
-										{
-											Name:  "PORT_NUMBER",
-											Value: d.Spec.DatabasePort,
-										},
-									},
-									Command: []string{"python3", "echo", "Hello"},
-								},
-							},
-
-							RestartPolicy: "Never",
-						},
-					},
-				},
-			},
-		},
+	reportSchedule, err := reporting.GetSchedule(report.Spec.Schedule)
+	if err != nil {
+		return ctrl.Result{}, err // @fixme empty results ?
 	}
-	return cronjob
+	nextReportPeriod := reporting.GetNextReportPeriod(reportSchedule, report.Status.LastReportTime.Time)
 
+	// update the NextReportTime on the report status
+	report.Status.NextReportTime = &metav1.Time{Time: nextReportPeriod.PeriodEnd}
+	now = time.Now().UTC()
+	nextRunTime := nextReportPeriod.PeriodEnd
+	waitTime := nextRunTime.Sub(now)
+
+	if err := r.Status().Update(ctx, report); err != nil {
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{RequeueAfter: waitTime}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ReportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&curatorv1alpha1.Report{}).
+		Watches(&source.Kind{Type: &curatorv1alpha1.CuratorConfig{}}, requeueReportsHandler(mgr.GetClient(), mgr.GetLogger())).
 		Complete(r)
+}
+
+func requeueReportsHandler(c client.Client, log logr.Logger) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+		reports := &curatorv1alpha1.ReportList{}
+		if err := c.List(context.Background(), reports); err != nil {
+			return nil
+		}
+
+		var res []reconcile.Request
+		for _, report := range reports.Items {
+			log.Info("requeuing report", "name", report.GetName(), "ns", report.GetNamespace())
+			res = append(res, reconcile.Request{
+				NamespacedName: client.ObjectKeyFromObject(&report),
+			})
+		}
+		return res
+	})
 }
