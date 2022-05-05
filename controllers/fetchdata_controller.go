@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -74,7 +75,7 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	if err := r.createCronJob(FetchData); err != nil {
+	if err := r.createCronJob(ctx, FetchData); err != nil {
 		l.Error(err, "failed to create the CronJob resource")
 		return ctrl.Result{}, err
 	}
@@ -82,9 +83,9 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
-func (r *FetchDataReconciler) createCronJob(m *curatorv1alpha1.FetchData) error {
-	if _, err := FetchCronJob(m.Name, m.Namespace, r.Client); err != nil {
-		if err := r.Client.Create(context.TODO(), NewCronJob(m, r.Scheme)); err != nil {
+func (r *FetchDataReconciler) createCronJob(ctx context.Context, m *curatorv1alpha1.FetchData) error {
+	if _, err := FetchCronJob(ctx, m.Name, m.Namespace, r.Client); err != nil {
+		if err := r.Client.Create(ctx, NewCronJob(m, r.Scheme)); err != nil {
 			return err
 		}
 	}
@@ -92,9 +93,9 @@ func (r *FetchDataReconciler) createCronJob(m *curatorv1alpha1.FetchData) error 
 	return nil
 }
 
-func FetchCronJob(name, namespace string, client client.Client) (*batchv1.CronJob, error) {
+func FetchCronJob(ctx context.Context, name, namespace string, client client.Client) (*batchv1.CronJob, error) {
 	cronJob := &batchv1.CronJob{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, cronJob)
+	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, cronJob)
 	return cronJob, err
 }
 
@@ -140,23 +141,23 @@ func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.C
 										},
 										{
 											Name:  "DATABASE_NAME",
-											Value: m.Spec.DatabaseName,
+											Value: os.Getenv("DATABASE_NAME"),
 										},
 										{
 											Name:  "DATABASE_USER",
-											Value: m.Spec.DatabaseUser,
+											Value: os.Getenv("DATABASE_USER"),
 										},
 										{
 											Name:  "DATABASE_PASSWORD",
-											Value: m.Spec.DatabasePassword,
+											Value: os.Getenv("DATABASE_PASSWORD"),
 										},
 										{
 											Name:  "DATABASE_HOST_NAME",
-											Value: m.Spec.DatabaseHostName,
+											Value: os.Getenv("DATABASE_HOST_NAME"),
 										},
 										{
 											Name:  "PORT_NUMBER",
-											Value: m.Spec.DatabasePort,
+											Value: os.Getenv("PORT_NUMBER"),
 										},
 									},
 									Command: []string{"python3"},

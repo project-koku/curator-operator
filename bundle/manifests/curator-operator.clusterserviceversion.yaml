@@ -275,8 +275,35 @@ spec:
                 - --health-probe-bind-address=:8081
                 - --metrics-bind-address=127.0.0.1:8080
                 - --leader-elect
+                - --http-port=:8082
                 command:
                 - /manager
+                env:
+                - name: DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabaseName
+                      name: db-secret-file
+                - name: DATABASE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabaseUser
+                      name: db-secret-file
+                - name: DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabasePassword
+                      name: db-secret-file
+                - name: DATABASE_HOST_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabaseHostName
+                      name: db-secret-file
+                - name: PORT_NUMBER
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabasePort
+                      name: db-secret-file
                 image: quay.io/operate-first/curator-operator:v0.0.1
                 livenessProbe:
                   httpGet:
@@ -300,10 +327,18 @@ spec:
                     memory: 64Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                volumeMounts:
+                - mountPath: /etc/secret-volume
+                  name: db-secret
+                  readOnly: true
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: curator-operator-controller-manager
               terminationGracePeriodSeconds: 10
+              volumes:
+              - name: db-secret
+                secret:
+                  secretName: db-secret-file
       permissions:
       - rules:
         - apiGroups:
