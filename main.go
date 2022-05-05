@@ -18,9 +18,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"net/http"
 	"os"
+	"strconv"
+	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/jackc/pgx/v4"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -36,6 +41,8 @@ import (
 
 	curatorv1alpha1 "github.com/operate-first/curator-operator/api/v1alpha1"
 	"github.com/operate-first/curator-operator/controllers"
+	"github.com/operate-first/curator-operator/internal"
+	"github.com/operate-first/curator-operator/internal/signals"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -45,7 +52,13 @@ var (
 )
 
 const (
-	postgresURL = "host=postgresql.test-project.svc  port=5432 user=curator password=M5rBgWkN8LfjeyI8 dbname=curatordb sslmode=disable"
+	defaultServerPort = ":8082"
+	defaultTimeout    = time.Second * 10
+	dbName            = "DATABASE_NAME"
+	dbHost            = "DATABASE_HOST_NAME"
+	dbPort            = "PORT_NUMBER"
+	dbPassword        = "DATABASE_PASSWORD"
+	dbUser            = "DATABASE_USER"
 )
 
 func init() {
@@ -58,6 +71,8 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var serverPort string
+	flag.StringVar(&serverPort, "http-port", defaultServerPort, "configures the default port for the HTTP server")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -84,7 +99,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := pgx.Connect(context.Background(), postgresURL)
+	port, err := strconv.Atoi(os.Getenv(dbPort))
+	if err != nil {
+		setupLog.Error(err, "unable to convert port value")
+		os.Exit(1)
+	}
+
+	config, _ := pgx.ParseConfig("")
+	config.Host = os.Getenv(dbHost)
+	config.Port = uint16(port)
+	config.User = os.Getenv(dbUser)
+	config.Password = os.Getenv(dbPassword)
+	config.Database = os.Getenv(dbName)
+
+	db, err := pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
 		setupLog.Error(err, "failed to open a database connection to postgres")
 		os.Exit(1)
@@ -117,9 +145,58 @@ func main() {
 		os.Exit(1)
 	}
 
+	go func() {
+		if err := runServer(context.Background(), db, setupLog, serverPort); err != nil {
+			setupLog.Error(err, "failed to run http server")
+			os.Exit(1)
+		}
+	}()
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func runServer(ctx context.Context, conn *pgx.Conn, logger logr.Logger, httpServerPort string) error {
+	internal.NewHTTPServer(ctx, httpServerPort, conn, logger)
+
+	server := http.Server{
+		Addr: httpServerPort,
+	}
+
+	logger.Info("starting http server on port" + httpServerPort)
+
+	go startServer(&server, logger)
+
+	err := shutdownServer(ctx, defaultTimeout, &server, logger)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func startServer(server *http.Server, logger logr.Logger) {
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		logger.Error(err, "failed to listen on http server")
+	}
+	logger.Info("http server stopped gracefully")
+}
+
+func shutdownServer(ctx context.Context, timeout time.Duration, server *http.Server, logger logr.Logger) error {
+	stopCh, closeCh := signals.CreateChannel()
+	defer closeCh()
+	sigReceived := <-stopCh
+	logger.Info("received shutdown signal", "signal", sigReceived)
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Error(err, "failed to graceful shutdown server")
+		return err
+	}
+	logger.Info("http server shutdowned")
+
+	return nil
 }

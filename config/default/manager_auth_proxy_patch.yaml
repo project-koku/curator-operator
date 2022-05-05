@@ -32,3 +32,38 @@ spec:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"
         - "--leader-elect"
+        - "--http-port=:8082"
+        env: 
+          - name: DATABASE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: db-secret-file
+                key: DatabaseName
+          - name: DATABASE_USER
+            valueFrom:
+              secretKeyRef:
+                name: db-secret-file
+                key: DatabaseUser
+          - name: DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: db-secret-file
+                key: DatabasePassword
+          - name: DATABASE_HOST_NAME
+            valueFrom:
+              secretKeyRef:
+                name: db-secret-file
+                key: DatabaseHostName
+          - name: PORT_NUMBER
+            valueFrom:
+              secretKeyRef:
+                name: db-secret-file
+                key: DatabasePort
+        volumeMounts:
+        - name: db-secret
+          mountPath: /etc/secret-volume
+          readOnly: true
+      volumes:
+      - name: db-secret
+        secret:
+          secretName: db-secret-file
