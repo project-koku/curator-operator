@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -50,18 +51,34 @@ func downloadReport(ctx context.Context, w http.ResponseWriter, r *http.Request,
 		return &HTTPError{HTTPErr.code, HTTPErr.message, nil}
 	}
 
-	err := generateReport(ctx, conn, r, logger)
+	query := r.URL.Query()
+	start := query["start"]
+	end := query["end"]
+	dirName := "/tmp/curator-report"
+	err := os.MkdirAll(dirName, 0755)
+	if err != nil {
+		return &HTTPError{http.StatusInternalServerError, "error creating directory", err}
+	}
+	tarDirName := fmt.Sprintf("%s/%s-%s-koku-metrics.tar.gz",
+		dirName, strings.Join(start, ","), strings.Join(end, ","))
+
+	err = generateReport(ctx, conn, r, logger, tarDirName)
 	if err != nil {
 		return &HTTPError{http.StatusInternalServerError, "error generating report", err}
 	}
+
+	f, err := os.Open(tarDirName)
+	if err != nil {
+		return &HTTPError{http.StatusInternalServerError, "error generating report", err}
+	}
+	defer f.Close()
 
 	w.WriteHeader(http.StatusOK)
-
-	_, err = w.Write([]byte("generated report"))
+	w.Header().Set("Content-Type", "application/json")
+	_, err = io.Copy(w, f)
 	if err != nil {
 		return &HTTPError{http.StatusInternalServerError, "error generating report", err}
 	}
-
 	return nil
 }
 
@@ -87,17 +104,7 @@ func validateRequest(r *http.Request) *HTTPError {
 	return nil
 }
 
-func generateReport(ctx context.Context, conn *pgx.Conn, r *http.Request, logger logr.Logger) error {
-	query := r.URL.Query()
-	start := query["start"]
-	end := query["end"]
-	dirName := "/tmp/curator-report"
-	err := os.MkdirAll(dirName, 0755)
-	if err != nil {
-		return err
-	}
-	tarDirName := fmt.Sprintf("%s/%s-%s-koku-metrics.tar.gz",
-		dirName, strings.Join(start, ","), strings.Join(end, ","))
+func generateReport(ctx context.Context, conn *pgx.Conn, r *http.Request, logger logr.Logger, tarDirName string) error {
 	outputFile, err := os.OpenFile(tarDirName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
