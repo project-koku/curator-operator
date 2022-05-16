@@ -25,9 +25,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-logr/logr"
-	"github.com/jackc/pgx/v4"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -39,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/go-logr/logr"
+	"github.com/jackc/pgx/v4"
 	curatorv1alpha1 "github.com/operate-first/curator-operator/api/v1alpha1"
 	"github.com/operate-first/curator-operator/controllers"
 	"github.com/operate-first/curator-operator/internal"
@@ -122,7 +121,6 @@ func main() {
 	if err = (&controllers.ReportReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		DB:     db,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Report")
 		os.Exit(1)
