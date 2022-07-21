@@ -48,6 +48,18 @@ metadata:
               "period": "hourly"
             }
           }
+        },
+        {
+          "apiVersion": "curator.operatefirst.io/v1alpha1",
+          "kind": "ReportAPI",
+          "metadata": {
+            "name": "daily-sample-report"
+          },
+          "spec": {
+            "namespace": "koku-metrics-operator",
+            "reportPeriod": "Day",
+            "reportingEnd": "2022-05-11T00:00:00Z"
+          }
         }
       ]
     capabilities: Basic Install
@@ -68,6 +80,11 @@ spec:
       displayName: Fetch Data
       kind: FetchData
       name: fetchdata.curator.operatefirst.io
+      version: v1alpha1
+    - description: ReportAPI is the Schema for the reportapis API
+      displayName: Report API
+      kind: ReportAPI
+      name: reportapis.curator.operatefirst.io
       version: v1alpha1
     - description: Report is the Schema for the reports API
       displayName: Report
@@ -194,6 +211,32 @@ spec:
           - curator.operatefirst.io
           resources:
           - fetchdata/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - curator.operatefirst.io
+          resources:
+          - reportapis
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - curator.operatefirst.io
+          resources:
+          - reportapis/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - curator.operatefirst.io
+          resources:
+          - reportapis/status
           verbs:
           - get
           - patch

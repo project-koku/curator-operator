@@ -16,6 +16,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/jackc/pgx/v4"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	curatorv1alpha1 "github.com/operate-first/curator-operator/api/v1alpha1"
 )
 
 // Server defines the http server configuration
@@ -36,13 +41,144 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-func NewHTTPServer(ctx context.Context, httpServerPort string, conn *pgx.Conn, logger logr.Logger) {
+var timeFormat = "2006-01-02 15:04:05"
+
+var metricsList = []string{"report_period_start", "report_period_end", "interval_start", "interval_end"}
+
+func NewHTTPServer(ctx context.Context, httpServerPort string, conn *pgx.Conn, logger logr.Logger, c client.Client) {
 	http.HandleFunc("/download", func(w http.ResponseWriter, r *http.Request) {
 		httpErr := downloadReport(ctx, w, r, conn, logger)
 		if httpErr != nil {
 			writeErrorResponse(logger, w, httpErr.code, httpErr.message)
 		}
 	})
+
+	http.HandleFunc("/report", func(w http.ResponseWriter, r *http.Request) {
+		httpErr := reportAPI(ctx, w, r, conn, c, logger)
+		if httpErr != nil {
+			writeErrorResponse(logger, w, httpErr.code, httpErr.message)
+		}
+	})
+}
+
+func reportAPI(ctx context.Context, w http.ResponseWriter, r *http.Request, conn *pgx.Conn, c client.Client, logger logr.Logger) *HTTPError {
+	HTTPErr := validateReportAPIRequest(r)
+	if HTTPErr != nil {
+		return &HTTPError{HTTPErr.code, HTTPErr.message, nil}
+	}
+
+	query := r.URL.Query()
+	reportName := strings.Join(query["reportName"], ",")
+	reportNamespace := strings.Join(query["reportNamespace"], ",")
+
+	report := &curatorv1alpha1.ReportAPI{}
+	if err := c.Get(ctx, types.NamespacedName{Namespace: reportNamespace, Name: reportName}, report); err != nil {
+		return &HTTPError{http.StatusBadRequest, "error fetching report", err}
+	}
+
+	finalQuery, HTTPErr := generateDBQuery(report)
+	if HTTPErr != nil {
+		return &HTTPError{HTTPErr.code, HTTPErr.message, nil}
+	}
+
+	rows, err := conn.Query(ctx, finalQuery)
+	if err != nil {
+		log.Fatal("error while executing query")
+	}
+	fds := rows.FieldDescriptions()
+
+	colJSON := make([]string, 0, len(fds))
+	for _, fd := range fds {
+		colJSON = append(colJSON, string(fd.Name))
+	}
+
+	var finalresult []interface{}
+	for rows.Next() {
+		columnVal, _ := rows.Values()
+		res := make(map[string]interface{})
+
+		for i, v := range columnVal {
+			res[colJSON[i]] = v
+		}
+		finalresult = append(finalresult, res)
+	}
+
+	result, err := json.Marshal(finalresult)
+	if err != nil {
+		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	if finalresult == nil {
+		resp := make(map[string]string)
+		resp["message"] = "No content available."
+		jsonResp, err := json.Marshal(resp)
+		if err != nil {
+			log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+		}
+		if _, err := w.Write(jsonResp); err != nil {
+			logger.Error(err, "failed writing HTTP response")
+		}
+		return nil
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write(result); err != nil {
+		logger.Error(err, "failed writing HTTP response")
+	}
+	return nil
+}
+
+func generateDBQuery(report *curatorv1alpha1.ReportAPI) (string, *HTTPError) {
+	var initialQuery, finalQuery string
+	endInterval := report.Spec.ReportingEnd.Format(timeFormat)
+
+	// Check if metricsName present
+	if len(report.Spec.MetricsName) > 0 {
+		var str []string
+		for _, value := range report.Spec.MetricsName {
+			str = append(str, string(value))
+		}
+		st := append(metricsList, str...)
+		selectedItem := strings.Join(st, ", ")
+		initialQuery = fmt.Sprintf("SELECT %s FROM logs_2", selectedItem)
+	} else {
+		initialQuery = "SELECT * FROM logs_2"
+	}
+
+	startInterval := ""
+	if report.Spec.ReportingStart != nil {
+		HTTPErr := validateReportTimeFrame(report.Spec.ReportingStart, report.Spec.ReportingEnd)
+		if HTTPErr != nil {
+			return "", &HTTPError{HTTPErr.code, HTTPErr.message, nil}
+		}
+		startInterval = report.Spec.ReportingStart.Format(timeFormat)
+		finalQuery = fmt.Sprintf(initialQuery+" WHERE interval_start >='%s'"+
+			"::timestamp with time zone AND interval_end < '%s'::timestamp with time zone", startInterval, endInterval)
+	} else {
+		offset := 0
+		reportPeriod := strings.ToLower(string(report.Spec.ReportAPIPeriod))
+
+		switch reportPeriod {
+		case "day":
+			offset = 1
+		case "week":
+			offset = 7
+		case "month":
+			offset = 30
+		default:
+			offset = 0
+		}
+
+		finalQuery = fmt.Sprintf(initialQuery+" WHERE interval_start >="+
+			"'%s'::timestamp with time zone - interval '%d day' AND interval_end < '%s'::timestamp with time zone", endInterval, offset, endInterval)
+	}
+
+	if report.Spec.Namespace != "" {
+		finalQuery = fmt.Sprintf(finalQuery+" AND namespace='%s'", report.Spec.Namespace)
+	}
+
+	return finalQuery, nil
 }
 
 func downloadReport(ctx context.Context, w http.ResponseWriter, r *http.Request, conn *pgx.Conn, logger logr.Logger) *HTTPError {
@@ -197,4 +333,33 @@ func writeResponseAsJSON(logger logr.Logger, w http.ResponseWriter, code int, re
 	if _, err = w.Write(enc); err != nil {
 		logger.Error(err, "failed writing HTTP response")
 	}
+}
+
+func validateReportAPIRequest(r *http.Request) *HTTPError {
+	if r.URL.Path != "/report" {
+		return &HTTPError{http.StatusNotFound, "404 not found", nil}
+	}
+
+	if r.Method != "GET" {
+		return &HTTPError{http.StatusMethodNotAllowed, "method is not supported", nil}
+	}
+
+	query := r.URL.Query()
+	reportName, present := query["reportName"]
+	if !present || len(reportName) == 0 {
+		return &HTTPError{http.StatusBadRequest, "reportName not present", nil}
+	}
+
+	reportNamespace, present := query["reportNamespace"]
+	if !present || len(reportNamespace) == 0 {
+		return &HTTPError{http.StatusBadRequest, "reportNamespace not present", nil}
+	}
+	return nil
+}
+
+func validateReportTimeFrame(startTime *metav1.Time, endTime *metav1.Time) *HTTPError {
+	if startTime.Time.After(endTime.Time) {
+		return &HTTPError{http.StatusMethodNotAllowed, "reportingStart should never come after reportingEnd", nil}
+	}
+	return nil
 }

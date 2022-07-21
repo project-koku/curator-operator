@@ -20,6 +20,11 @@ spec:
       kind: FetchData
       name: fetchdata.curator.operatefirst.io
       version: v1alpha1
+    - description: ReportAPI is the Schema for the reportapis API
+      displayName: Report API
+      kind: ReportAPI
+      name: reportapis.curator.operatefirst.io
+      version: v1alpha1
     - description: Report is the Schema for the reports API
       displayName: Report
       kind: Report
