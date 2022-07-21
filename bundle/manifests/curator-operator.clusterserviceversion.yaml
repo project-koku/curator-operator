@@ -34,19 +34,16 @@ metadata:
           "apiVersion": "curator.operatefirst.io/v1alpha1",
           "kind": "Report",
           "metadata": {
-            "name": "namespace-cpu-request-report-sample"
+            "name": "day-report"
           },
           "spec": {
-            "namespace": "default",
-            "reportingEnd": "2022-12-30T23:59:59Z",
-            "reportingStart": "2022-03-01T00:32:00Z",
-            "schedule": {
-              "hourly": {
-                "minute": 32,
-                "second": 2
-              },
-              "period": "hourly"
-            }
+            "cronjobNamespace": "koku-metrics-operator",
+            "databaseHostName": "\u003chostname or host ip\u003e",
+            "databaseName": "\u003cdatabase-name\u003e",
+            "databasePassword": "\u003cpassword\u003e",
+            "databasePort": "\u003cport-number\u003e",
+            "databaseUser": "\u003cuser-name\u003e",
+            "reportFrequency": "\u003cday,week or month\u003e"
           }
         }
       ]
