@@ -52,6 +52,26 @@ type FetchDataSpec struct {
 
 	// Value for the Database Environment Variable in order to define the port which it should use. It will be used in its container as well
 	DatabasePort string `json:"databasePort,omitempty"`
+
+	// If data has to be stored in one more additional storage similar to or any S3 Storage
+	// True if you wish to store data or False if you don't want data to leave the openshift cluster.
+	HAS_S3_ACCESS string `json:"has_s3_access,omitempty"`
+
+	//Access key Id for S3 bucket
+	// Default value: nil
+	AWS_ACCESS_KEY_ID string `json:"aws_access_key_id,omitempty"`
+
+	//Secret access key Id for S3 bucket
+	// Default value: nil
+	AWS_SECRET_ACCESS_KEY string `json:"aws_secret_access_key,omitempty"`
+
+	//Bucket name where you want data to be stored
+	// Default value: nil
+	BUCKET_NAME string `json:"bucket_name,omitempty"`
+
+	// Host name to access the S3 bucket
+	// Default value: nil
+	S3_HOST_NAME string `json:"s3_host_name,omitempty"`
 }
 
 // FetchDataStatus defines the observed state of FetchData
