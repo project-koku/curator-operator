@@ -33,6 +33,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -132,6 +133,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "FetchData")
 		os.Exit(1)
 	}
+	if err = (&controllers.ReportAPIReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ReportAPI")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -144,7 +152,7 @@ func main() {
 	}
 
 	go func() {
-		if err := runServer(context.Background(), db, setupLog, serverPort); err != nil {
+		if err := runServer(context.Background(), db, setupLog, serverPort, mgr.GetClient()); err != nil {
 			setupLog.Error(err, "failed to run http server")
 			os.Exit(1)
 		}
@@ -156,8 +164,8 @@ func main() {
 	}
 }
 
-func runServer(ctx context.Context, conn *pgx.Conn, logger logr.Logger, httpServerPort string) error {
-	internal.NewHTTPServer(ctx, httpServerPort, conn, logger)
+func runServer(ctx context.Context, conn *pgx.Conn, logger logr.Logger, httpServerPort string, c client.Client) error {
+	internal.NewHTTPServer(ctx, httpServerPort, conn, logger, c)
 
 	server := http.Server{
 		Addr: httpServerPort,

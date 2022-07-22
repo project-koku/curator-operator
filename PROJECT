@@ -33,4 +33,13 @@ resources:
   kind: FetchData
   path: github.com/operate-first/curator-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: operatefirst.io
+  group: curator
+  kind: ReportAPI
+  path: github.com/operate-first/curator-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

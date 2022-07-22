@@ -1,0 +1,10 @@
+apiVersion: curator.operatefirst.io/v1alpha1
+kind: ReportAPI
+metadata:
+  name: daily-sample-report
+spec:
+  reportPeriod: Day
+  namespace: koku-metrics-operator
+  reportingEnd: "2022-05-11T00:00:00Z"  # prevents Reports targeting future time
+  # reportingStart: "2022-07-11T00:00:00Z"
+  # metricsName: ["pod_usage_memory_byte_seconds", "pod"]
