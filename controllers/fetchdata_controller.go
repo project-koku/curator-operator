@@ -128,8 +128,8 @@ func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.C
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "crdunzip",
-									Image: "docker.io/surbhi0129/crd_unzip:latest",
+									Name:  "push-to-s3-and-database",
+									Image: "docker.io/surbhi0129/s3-database:latest",
 									Env: []corev1.EnvVar{
 										{
 											Name:  "BACKUP_SRC",
@@ -158,6 +158,26 @@ func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.C
 										{
 											Name:  "PORT_NUMBER",
 											Value: os.Getenv("PORT_NUMBER"),
+										},
+										{
+											Name:  "HAS_S3_ACCESS",
+											Value: m.Spec.HAS_S3_ACCESS,
+										},
+										{
+											Name:  "AWS_ACCESS_KEY_ID",
+											Value: m.Spec.AWS_ACCESS_KEY_ID,
+										},
+										{
+											Name:  "AWS_SECRET_ACCESS_KEY",
+											Value: m.Spec.AWS_SECRET_ACCESS_KEY,
+										},
+										{
+											Name:  "BUCKET_NAME",
+											Value: m.Spec.BUCKET_NAME,
+										},
+										{
+											Name:  "S3_HOST_NAME",
+											Value: m.Spec.S3_HOST_NAME,
 										},
 									},
 									Command: []string{"python3"},

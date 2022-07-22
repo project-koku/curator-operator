@@ -12,3 +12,8 @@ spec:
   databaseUser: <user-name>
   databaseHostName: <hostname or host ip>
   databasePort: <port-number>
+  has_s3_access: <true if you want to save files in s3 bucket else, false>
+  aws_access_key_id: <if has_s3_access variable is true provide the credentials, else nil>
+  aws_secret_access_key: <if has_s3_access variable is true provide the credentials, else nil>
+  bucket_name: <if has_s3_access variable is true provide the S3 bucket name, else nil>
+  s3_host_name: <if has_s3_access variable is true provide the hostname, else nil>
