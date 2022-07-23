@@ -42,6 +42,7 @@ import (
 	curatorv1alpha1 "github.com/operate-first/curator-operator/api/v1alpha1"
 	"github.com/operate-first/curator-operator/controllers"
 	"github.com/operate-first/curator-operator/internal"
+	dbCustom "github.com/operate-first/curator-operator/internal/db"
 	"github.com/operate-first/curator-operator/internal/signals"
 	//+kubebuilder:scaffold:imports
 )
@@ -116,6 +117,12 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "failed to open a database connection to postgres")
 		os.Exit(1)
+	} else {
+		_, err := dbCustom.CreateTablesAndRoutines(db)
+		if err != nil {
+			setupLog.Error(err, "Unable to create tables in the DB")
+			os.Exit(1)
+		}
 	}
 	defer db.Close(context.Background())
 
