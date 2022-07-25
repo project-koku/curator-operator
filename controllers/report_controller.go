@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"strconv"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -96,6 +97,7 @@ func newCronJobFromReport(d *curatorv1alpha1.Report, scheme *runtime.Scheme) *ba
 
 	var reportPeriod string
 	var scheduleOfReport string
+	var sendEmail string
 
 	if d.Spec.ReportFrequency == "day" {
 		reportPeriod = "SELECT generate_report('day');"
@@ -107,6 +109,9 @@ func newCronJobFromReport(d *curatorv1alpha1.Report, scheme *runtime.Scheme) *ba
 		reportPeriod = "SELECT generate_report('month');"
 		scheduleOfReport = "05 0 1 * *"
 	}
+
+	sendEmail = strconv.FormatBool(d.Spec.EmailReports)
+
 	cronjob := &batchv1.CronJob{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Cronjob",
@@ -149,6 +154,48 @@ func newCronJobFromReport(d *curatorv1alpha1.Report, scheme *runtime.Scheme) *ba
 										},
 									},
 									Command: []string{"psql", "-c", reportPeriod},
+									Args: []string{
+										"",
+									},
+								},
+								{
+									Name:  "emailreporter",
+									Image: "docker.io/rav28/email_controller:v0.0.12",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "DATABASE_NAME",
+											Value: d.Spec.DatabaseName,
+										},
+										{
+											Name:  "DATABASE_USER",
+											Value: d.Spec.DatabaseUser,
+										},
+										{
+											Name:  "DATABASE_PASSWORD",
+											Value: d.Spec.DatabasePassword,
+										},
+										{
+											Name:  "DATABASE_HOST_NAME",
+											Value: d.Spec.DatabaseHostName,
+										},
+										{
+											Name:  "PORT_NUMBER",
+											Value: d.Spec.DatabasePort,
+										},
+										{
+											Name:  "EMAIL_USER",
+											Value: d.Spec.EmailUser,
+										},
+										{
+											Name:  "EMAIL_PASSWORD",
+											Value: d.Spec.EmailPassword,
+										},
+										{
+											Name:  "COST_MGMT_RECIPIENTS",
+											Value: d.Spec.EmailRecepients,
+										},
+									},
+									Command: []string{"python3", "send_email.py", d.Spec.ReportFrequency, sendEmail},
 									Args: []string{
 										"",
 									},

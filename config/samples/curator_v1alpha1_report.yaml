@@ -11,3 +11,7 @@ spec:
   databaseHostName: <hostname or host ip>
   databasePort: <port-number>
   reportFrequency: <day,week or month>
+  emailReports: <boolean value> #if this value is true then input the below values
+  # emailUser: <sender email>
+  # emailPassword: <Password>
+  # emailRecepients: '{"user1@redhat.com":{"cc":["user2@gmail.com"]}}'
