@@ -46,6 +46,18 @@ type ReportSpec struct {
 
 	// Frequency of the report generation
 	ReportFrequency string `json:"reportFrequency,omitempty"`
+
+	//If email has to be sent then this value should be set to true
+	EmailReports bool `json:"emailReports,omitempty"`
+
+	//Sender email address which will be used as a mail address
+	EmailUser string `json:"emailUser,omitempty"`
+
+	//Sender email password which does not need 2FA
+	EmailPassword string `json:"emailPassword,omitempty"`
+
+	//Recepients email who will receive the reports, should be in the format {"user1@gmail.com":{"cc":["cc1@gmail.com"]}}
+	EmailRecepients string `json:"emailRecepients,omitempty"`
 }
 
 // ReportStatus defines the observed state of Report
