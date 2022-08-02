@@ -1,0 +1,20 @@
+# Create pod with this yaml configuration to download reports locally.
+# After that pod is created you can use this command "oc rsync volume-shell:/tmp/koku-metrics-operator-reports/upload local/path/to/save/folder"  to download reports 
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: volume-shell
+  namespace: koku-metrics-operator
+spec:
+  volumes:
+  - name: koku-metrics-operator-reports
+    persistentVolumeClaim:
+      claimName: koku-metrics-operator-data #Make sure the following pod with claimName match the PVC containing the report data
+  containers:
+  - name: volume-shell
+    image: busybox
+    command: ['sleep', '3600']
+    volumeMounts:
+    - name: koku-metrics-operator-reports
+      mountPath: /tmp/costmanagement-metrics-operator-reports
