@@ -62,7 +62,7 @@ type ReportAPISpec struct {
 // +kubebuilder:validation:Enum=Day;Week;Month
 type ReportAPIPeriod string
 
-// +kubebuilder:validation:Enum=pod;pod_usage_memory_byte_seconds;pod_request_cpu_core_seconds;pod_limit_cpu_core_seconds;pod_usage_memory_byte_seconds;pod_request_memory_byte_seconds;node_capacity_cpu_cores;node_capacity_cpu_core_seconds;node_capacity_memory_bytes;node_capacity_memory_byte_seconds;pod_limit_memory_byte_seconds;node_capacity_cpu_cores;
+// +kubebuilder:validation:Enum=pod;pod_usage_cpu_core_seconds;pod_request_cpu_core_seconds;pod_limit_cpu_core_seconds;pod_usage_memory_byte_seconds;pod_request_memory_byte_seconds;node_capacity_cpu_cores;node_capacity_cpu_core_seconds;node_capacity_memory_bytes;node_capacity_memory_byte_seconds;pod_limit_memory_byte_seconds;
 type MetricsName string
 
 const (
