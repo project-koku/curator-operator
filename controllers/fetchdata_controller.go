@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"os"
+	"strconv"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -80,6 +81,16 @@ func (r *FetchDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	databaseCleanUp := FetchData.Spec.DatabaseCleanUp
+	cronJobName := "database-cleanup"
+	if databaseCleanUp {
+		l.Info("Inside databaseCleanUp")
+		if err := r.createCronJobForDBCleanup(ctx, FetchData, cronJobName); err != nil {
+			l.Error(err, "failed to create the CronJob resource")
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -94,6 +105,22 @@ func (r *FetchDataReconciler) createCronJob(ctx context.Context, m *curatorv1alp
 }
 
 func FetchCronJob(ctx context.Context, name, namespace string, client client.Client) (*batchv1.CronJob, error) {
+	cronJob := &batchv1.CronJob{}
+	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, cronJob)
+	return cronJob, err
+}
+
+func (r *FetchDataReconciler) createCronJobForDBCleanup(ctx context.Context, m *curatorv1alpha1.FetchData, cronJobName string) error {
+	if _, err := DBCleanUpCronJob(ctx, cronJobName, m.Namespace, r.Client); err != nil {
+		if err := r.Client.Create(ctx, DBCronJob(m, cronJobName)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func DBCleanUpCronJob(ctx context.Context, name, namespace string, client client.Client) (*batchv1.CronJob, error) {
 	cronJob := &batchv1.CronJob{}
 	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, cronJob)
 	return cronJob, err
@@ -188,6 +215,69 @@ func NewCronJob(m *curatorv1alpha1.FetchData, scheme *runtime.Scheme) *batchv1.C
 											MountPath: "/tmp/koku-metrics-operator-data",
 										},
 									},
+								},
+							},
+							RestartPolicy: "Never",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return cronjob
+}
+
+func DBCronJob(m *curatorv1alpha1.FetchData, cronJobName string) *batchv1.CronJob {
+	var schedule = "05 0 * * *"
+
+	cronjob := &batchv1.CronJob{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Cronjob",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cronJobName,
+			Namespace: m.Spec.CronjobNamespace,
+		},
+		Spec: batchv1.CronJobSpec{
+			ConcurrencyPolicy: "Forbid",
+			Schedule:          schedule,
+			JobTemplate: batchv1.JobTemplateSpec{
+				Spec: batchv1.JobSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "database-cleanup",
+									Image: "docker.io/ababar93/db-clean:latest",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "DATABASE_NAME",
+											Value: os.Getenv("DATABASE_NAME"),
+										},
+										{
+											Name:  "DATABASE_USER",
+											Value: os.Getenv("DATABASE_USER"),
+										},
+										{
+											Name:  "DATABASE_PASSWORD",
+											Value: os.Getenv("DATABASE_PASSWORD"),
+										},
+										{
+											Name:  "DATABASE_HOST_NAME",
+											Value: os.Getenv("DATABASE_HOST_NAME"),
+										},
+										{
+											Name:  "PORT_NUMBER",
+											Value: os.Getenv("PORT_NUMBER"),
+										},
+										{
+											Name:  "DATABASE_CLEANUP_DURATION",
+											Value: strconv.FormatInt(m.Spec.DatabaseCleanUpDuration, 10),
+										},
+									},
+									Command: []string{"python3"},
+									Args:    []string{"scripts/db_cleanup.py"},
 								},
 							},
 							RestartPolicy: "Never",

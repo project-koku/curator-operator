@@ -17,3 +17,5 @@ spec:
   aws_secret_access_key: <if has_s3_access variable is true provide the credentials, else nil>
   bucket_name: <if has_s3_access variable is true provide the S3 bucket name, else nil>
   s3_host_name: <if has_s3_access variable is true provide the hostname, else nil>
+  databaseCleanUp: <true if you want to database cleaup else, false>
+  databaseCleanUpDuration: <if databaseCleanUp variable is true provide the databaseCleanUpDuration, else nil>

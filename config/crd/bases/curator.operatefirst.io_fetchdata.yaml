@@ -51,6 +51,16 @@ spec:
               cronjobNamespace:
                 description: Namespace in which cron job is created
                 type: string
+              databaseCleanUp:
+                description: 'If you want to delete older database data this value
+                  should be set to true Default value: false'
+                type: boolean
+              databaseCleanUpDuration:
+                description: 'Value for the DatabaseCleanUpDuration in order to delete
+                  the older data from the database. Default value: nil'
+                format: int64
+                minimum: 30
+                type: integer
               databaseHostName:
                 description: Value for the Database HostName Environment Variable
                 type: string
