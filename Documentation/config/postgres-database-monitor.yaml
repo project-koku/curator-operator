@@ -1,0 +1,111 @@
+kind: List 
+metadata: {}
+apiVersion: v1
+items:
+#   - apiVersion: image.openshift.io/v1
+#     kind: ImageStream
+#     metadata:
+#       name: postgresql-13-rhel7
+#     spec:
+#       lookupPolicy:
+#         local: true
+#       tags:
+#         - name: latest
+#           from:
+#             kind: DockerImage
+#             name: registry.redhat.io/rhscl/postgresql-13-rhel7:latest
+#           importPolicy: {}
+#           referencePolicy:
+#             type: Local
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: postgresql
+    spec:
+      ports:
+        - name: postgresql
+          port: 5432
+          protocol: TCP
+          targetPort: 5432
+      selector:
+        name: postgresql
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: pgsql-data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: <storage-class-name>
+      volumeMode: Filesystem
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: postgresql
+    spec:
+      replicas: 1
+      selector:
+        name: postgresql
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          labels:
+            name: postgresql
+        spec:
+          containers:
+            - env:
+                - name: POSTGRES_USER
+                  value: <username>
+                - name: POSTGRES_PASSWORD
+                  value: <password>
+                - name: POSTGRES_DB
+                  value: <dbname>
+                - name: PGDATA
+                  value: /var/lib/postgresql/data/pgdata
+                - name: EMAIL_USER
+                  value: <email>
+                - name: EMAIL_PASS
+                  value: <password>
+                - name: EMAIL_RECI
+                  value: '{"user1@gmail.com":{"cc":["user2@gmail.com", user3@gmail.com]}}'
+                - name: MEM_LIMIT
+                  value: "75" #% of DB utilization(On when the users should be alerted)
+              image: "docker.io/rav28/postgres-alerts-db:v0.0.2"
+              imagePullPolicy: IfNotPresent
+#              livenessProbe:
+#                exec:
+#                  command:
+#                    - /usr/libexec/check-container
+#                    - --live
+#                initialDelaySeconds: 120
+#                timeoutSeconds: 10
+              name: postgresql
+              ports:
+                - containerPort: 5432
+                  protocol: TCP
+#              readinessProbe:
+#                exec:
+#                  command:
+#                    - /usr/libexec/check-container
+#                initialDelaySeconds: 5
+#                timeoutSeconds: 1
+              resources:
+                requests:
+                  cpu: "1"
+                  memory: 2Gi
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+              volumeMounts:
+                - mountPath: /var/lib/postgresql/data
+                  name: pgsql-data
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          volumes:
+            - name: pgsql-data
+              persistentVolumeClaim:
+                claimName: pgsql-data 
