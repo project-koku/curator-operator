@@ -72,6 +72,15 @@ type FetchDataSpec struct {
 	// Host name to access the S3 bucket
 	// Default value: nil
 	S3_HOST_NAME string `json:"s3_host_name,omitempty"`
+
+	// If you want to delete older database data this value should be set to true
+	// Default value: false
+	DatabaseCleanUp bool `json:"databaseCleanUp,omitempty"`
+
+	// Value for the DatabaseCleanUpDuration in order to delete the older data from the database.
+	// Default value: nil
+	// +kubebuilder:validation:Minimum=30
+	DatabaseCleanUpDuration int64 `json:"databaseCleanUpDuration,omitempty"`
 }
 
 // FetchDataStatus defines the observed state of FetchData
